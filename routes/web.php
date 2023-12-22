@@ -13,6 +13,32 @@
 |
 */
 
-$router->get('/', function () use ($router) {
-    return $router->app->version();
+$router->group(['prefix' => 'api'], function () use ($router) {
+    // Authentication Routes
+    $router->post('login', 'AuthController@login');
+
+    // Protected Routes
+    $router->group(['middleware' => 'auth'], function () use ($router) {
+        // Entries Routes
+        $router->get('entries', 'EntriesController@index');
+        $router->post('entries', 'EntriesController@store');
+        $router->get('entries/{id}', 'EntriesController@show');
+        $router->put('entries/{id}', 'EntriesController@update');
+        $router->delete('entries/{id}', 'EntriesController@destroy');
+
+        // Categories Routes
+        $router->get('categories', 'CategoriesController@index');
+        $router->post('categories', 'CategoriesController@store');
+
+        // Documents Routes
+        $router->post('documents', 'DocumentsController@store');
+        $router->get('documents/{id}', 'DocumentsController@show');
+
+        // CSV Export/Import Routes
+        $router->get('export', 'ExportController@exportCSV');
+        $router->post('import', 'ImportController@importCSV');
+
+        // Logout Route
+        $router->post('logout', 'AuthController@logout');
+    });
 });
