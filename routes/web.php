@@ -24,21 +24,21 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->post('entries', 'EntriesController@store');
         $router->get('entries/{id}', 'EntriesController@show');
         $router->put('entries/{id}', 'EntriesController@update');
-        $router->delete('entries/{id}', 'EntriesController@destroy');
+        $router->delete('entries/{id}', 'EntriesController@delete');
 
         // Categories Routes
         $router->get('categories', 'CategoriesController@index');
         $router->post('categories', 'CategoriesController@store');
 
         // Documents Routes
-        $router->post('documents', 'DocumentsController@store');
-        $router->get('documents/{id}', 'DocumentsController@show');
+//        $router->post('documents', 'DocumentsController@store');
+//        $router->get('documents/{id}', 'DocumentsController@show');
 
         // CSV Export/Import Routes
-        $router->get('export', 'ExportController@exportCSV');
-        $router->post('import', 'ImportController@importCSV');
+//        $router->get('export', 'ExportController@exportCSV');
+//        $router->post('import', 'ImportController@importCSV');
 
         // Logout Route
-        $router->post('logout', 'AuthController@logout');
+//        $router->post('logout', 'AuthController@logout');  // not possible with api token authentication
     });
 });

@@ -1,0 +1,16 @@
+POST http://localhost:8000/api/entries
+Content-Type: application/json
+
+{
+    "api_token": "0i5ToOgepyWnqTnbLplWJL7rLI95ifbEE0fTc16IjxqwhhXHFe4p8UtfhIg1HQPOcGwOHN0ObeGwnXeo",
+    "category_id": 10,
+    "amount": 100,
+    "payed_received": false,
+    "recipient_sender": "John Doe",
+    "payment_method": null,
+    "description": "Test entry",
+    "no_invoice": false,
+    "date": "2019-01-01"
+}
+
+###

@@ -1,0 +1,9 @@
+POST http://localhost:8000/api/categories
+Content-Type: application/json
+
+{
+    "api_token": "0i5ToOgepyWnqTnbLplWJL7rLI95ifbEE0fTc16IjxqwhhXHFe4p8UtfhIg1HQPOcGwOHN0ObeGwnXeo",
+    "name": "Category 1"
+}
+
+###

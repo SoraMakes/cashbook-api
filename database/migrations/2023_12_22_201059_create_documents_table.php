@@ -11,14 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('documents', function (Blueprint $table) {
             $table->id();
-            $table->string('username')->unique()->index();
-            $table->string('password');
-            $table->string('api_token', 80)->unique()->nullable()->default(null);
-
+            $table->foreignId('entry_id')->constrained('entries')->onDelete('cascade');
+            $table->string('file_path');
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 
@@ -27,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('documents');
     }
 };
