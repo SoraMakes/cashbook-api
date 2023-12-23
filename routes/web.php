@@ -32,6 +32,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->put('categories/{id}', 'CategoriesController@update');
         $router->delete('categories/{id}', 'CategoriesController@delete');
 
+        // Users Routes
+        $router->get('users', 'UsersController@index');
+
         // Documents Routes
 //        $router->post('documents', 'DocumentsController@store');
 //        $router->get('documents/{id}', 'DocumentsController@show');
