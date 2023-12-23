@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('category_id')->constrained()->onDelete('cascade');
-            $table->decimal('amount', 8, 2)
-                ->comment('The amount of the entry. Positive for income, negative for expenses.');
+            $table->bigInteger('amount')
+                ->comment('The amount of the entry in cents. Positive for income, negative for expenses.');
             $table->string('recipient_sender');
-            $table->enum('payment_method', ['cash', 'bank_transfer'])->nullable();
+            $table->enum('payment_method', ['cash', 'bank_transfer', 'not_payed'])->default('not_payed');
             $table->text('description');
             $table->boolean('no_invoice')->default(false);
             $table->date('date')->comment('The date of the entry.');

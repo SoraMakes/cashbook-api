@@ -29,6 +29,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         // Categories Routes
         $router->get('categories', 'CategoriesController@index');
         $router->post('categories', 'CategoriesController@store');
+        $router->put('categories/{id}', 'CategoriesController@update');
+        $router->delete('categories/{id}', 'CategoriesController@delete');
 
         // Documents Routes
 //        $router->post('documents', 'DocumentsController@store');

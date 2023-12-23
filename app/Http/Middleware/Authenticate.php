@@ -2,8 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Closure;
-use Illuminate\Contracts\Auth\Factory as Auth;
+use \Illuminate\Support\Facades\Auth;
 
 class Authenticate
 {
@@ -33,9 +34,10 @@ class Authenticate
      * @param  string|null  $guard
      * @return mixed
      */
-    public function handle($request, Closure $next, $guard = null)
+    public function handle($request, Closure $next)
     {
-        if ($this->auth->guard($guard)->guest()) {
+        // Check if the user is authenticated
+        if (Auth::guest()) {
             return response('Unauthorized.', 401);
         }
 

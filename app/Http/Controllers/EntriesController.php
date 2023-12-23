@@ -30,7 +30,7 @@ class EntriesController extends Controller
             'category_id' => 'required|integer|exists:categories,id',
             'amount' => 'required|numeric',
             'recipient_sender' => 'required|string|max:255',
-            'payment_method' => 'sometimes|in:cash,bank_transfer',
+            'payment_method' => 'required|in:cash,bank_transfer,not_payed',
             'description' => 'required|string',
             'no_invoice' => 'required|boolean',
             'date' => 'required|date',
