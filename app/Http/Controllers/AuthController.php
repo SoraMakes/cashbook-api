@@ -22,7 +22,9 @@ class AuthController extends Controller {
         $user = User::where('username', $request->username)->first();
 
         if ($user && Hash::check($request->password, $user->password)) {
-            return response()->json(['token' => $user->api_token], 200);
+            return response()->json(
+                ['token' => $user->api_token, 'user_id' => $user->id, 'username' => $user->username],
+                200);
         }
 
         return response()->json(['error' => 'Unauthorized'], 401);
