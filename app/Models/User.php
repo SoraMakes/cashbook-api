@@ -35,4 +35,8 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     public function entries(): \Illuminate\Database\Eloquent\Relations\HasMany {
         return $this->hasMany(Entry::class);
     }
+
+    public function entries_modified() {
+        return $this->hasMany(Entry::class, 'user_id_last_modified');
+    }
 }

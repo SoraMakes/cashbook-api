@@ -15,6 +15,7 @@ class Entry extends Model {
      */
     protected $fillable = [
         'user_id',
+        'user_id_last_modified',
         'category_id',
         'amount',
         'recipient_sender',
@@ -36,6 +37,10 @@ class Entry extends Model {
      */
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo {
         return $this->belongsTo(User::class);
+    }
+
+    public function user_last_modified(): \Illuminate\Database\Eloquent\Relations\BelongsTo {
+        return $this->belongsTo(User::class, 'user_id_last_modified');
     }
 
     /**
@@ -66,7 +71,7 @@ class Entry extends Model {
     public function replicateWithHistory($updatedData, $userId): Entry {
         $newEntry = $this->replicate();
         $newEntry->fill($updatedData);
-        $newEntry->user_id = $userId;
+        $newEntry->user_id_last_modified = $userId;
         $newEntry->created_at = $this->created_at; // retain original creation timestamp
         $newEntry->entry_id = $this->id; // set the entry_id to the original entry's id
         return $newEntry;
