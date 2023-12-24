@@ -3,28 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Models\Entry;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
-class EntriesController extends Controller
-{
-    public function index()
-    {
+class EntriesController extends Controller {
+    public function index() {
         // Retrieve all non-deleted entries
         return response()->json(Entry::all());
     }
 
-    public function show($id)
-    {
+    public function show($id) {
         // Retrieve a single entry
         $entry = Entry::findOrFail($id);
 
         return response()->json($entry, 200);
     }
 
-    public function store(Request $request)
-    {
+    public function store(Request $request) {
         // Validate the request
         $validator = Validator::make($request->all(), [
             'category_id' => 'required|integer|exists:categories,id',
@@ -34,22 +33,58 @@ class EntriesController extends Controller
             'description' => 'required|string',
             'no_invoice' => 'required|boolean',
             'date' => 'required|date',
+            'document' => 'sometimes',
         ]);
+
+        $validator->sometimes('document', 'file|mimes:avif,webp,jpg,jpeg,png,pdf|max:4096', function ($input) {
+            return !is_array($input->document);
+        });
+
+        $validator->sometimes('document.*', 'file|mimes:avif,webp,jpg,jpeg,png,pdf|max:4096', function ($input) {
+            return is_array($input->document);
+        });
+
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 400);
         }
 
-        $entry = Entry::create(array_merge(
-            $request->all(),
-            ['user_id' => Auth::id()]
-        ));
+        DB::beginTransaction();
+        // process entry
+        try {
+            $entry = Entry::create(array_merge(
+                $request->all(),
+                ['user_id' => Auth::id()]
+            ));
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Something went wrong while creating the entry'], 400);
+        }
+
+        // process documents
+        $documents = [];
+        try {
+            $documents = DocumentController::processOneOrMultipleFiles($request->document, $entry->id);
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            // Delete any files that were saved before the error occurred
+            foreach ($documents as $document) {
+                Storage::delete($document['file_path']);
+                Storage::delete($document['thumbnail_path']);
+            }
+
+            // Rethrow the exception to trigger the rollback
+            throw $e;
+        }
+        DB::commit();
+
+
 
         return response()->json($entry, 201);
     }
 
-    public function update($id, Request $request)
-    {
+    public function update($id, Request $request) {
         $request['id'] = $id; // add id to request so it can be validated
         // Validate the request
         $validator = Validator::make($request->all(), [
@@ -61,7 +96,16 @@ class EntriesController extends Controller
             'description' => 'sometimes|string',
             'no_invoice' => 'sometimes|boolean',
             'date' => 'sometimes|date',
+            'document' => 'sometimes',
         ]);
+
+        $validator->sometimes('document', 'file|mimes:avif,webp,jpg,jpeg,png,pdf|max:4096', function ($input) {
+            return !is_array($input->document);
+        });
+
+        $validator->sometimes('document.*', 'file|mimes:avif,webp,jpg,jpeg,png,pdf|max:4096', function ($input) {
+            return is_array($input->document);
+        });
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 400);
@@ -70,7 +114,7 @@ class EntriesController extends Controller
 
         try {
             $originalEntry = Entry::findOrFail($id);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Check if the entry exists, including soft-deleted entries
             $originalEntry = Entry::withTrashed()->where('id', $id)->first();
 
@@ -92,18 +136,43 @@ class EntriesController extends Controller
             'date' => $request->input('date', $originalEntry->date),
         ];
 
-        // Create a new entry with the updated data
-        $newEntry = $originalEntry->replicateWithHistory($updatedData, Auth::id());
-        $newEntry->save();
+        DB::beginTransaction();
 
-        // Soft delete the original entry
-        $originalEntry->delete();
+        // Create a new entry with the updated data
+        try {
+            $newEntry = $originalEntry->replicateWithHistory($updatedData, Auth::id());
+            $newEntry->save();
+
+            // Soft delete the original entry
+            $originalEntry->delete();
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Something went wrong while updating the entry'], 400);
+        }
+
+        // process documents
+        $documents = [];
+        try {
+            $documents = DocumentController::processOneOrMultipleFiles($request->document, $newEntry->id);
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            // Delete any files that were saved before the error occurred
+            foreach ($documents as $document) {
+                Storage::delete($document['file_path']);
+                Storage::delete($document['thumbnail_path']);
+            }
+
+            // Rethrow the exception to trigger the rollback
+            throw $e;
+        }
+        DB::commit();
+
 
         return response()->json($newEntry, 200);
     }
 
-    public function delete($id)
-    {
+    public function delete($id) {
         $entry = Entry::findOrFail($id);
         $entry->delete();
 

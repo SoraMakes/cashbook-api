@@ -4,7 +4,15 @@ Authorization: Bearer 0i5ToOgepyWnqTnbLplWJL7rLI95ifbEE0fTc16IjxqwhhXHFe4p8UtfhI
 
 --boundary
 #Content-Disposition: form-data; name="document"; filename="sample.jpg"
-Content-Disposition: form-data; name="document"; filename="sample.pdf"
+Content-Disposition: form-data; name="document[]"; filename="sample.pdf"
 
 #< /mnt/c/Users/Markus/Downloads/sample.jpg
 < /mnt/c/Users/Markus/Downloads/sample.pdf
+
+
+--boundary
+Content-Disposition: form-data; name="document[]"; filename="sample.jpg"
+
+< /mnt/c/Users/Markus/Downloads/sample.jpg
+
+

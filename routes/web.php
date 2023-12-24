@@ -21,16 +21,16 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->group(['middleware' => 'auth'], function () use ($router) {
         // Entries Routes
         $router->get('entries', 'EntriesController@index');
-        $router->post('entries', 'EntriesController@store');
-        $router->get('entries/{id}', 'EntriesController@show');
+//        $router->post('entries', 'EntriesController@store');
+//        $router->get('entries/{id}', 'EntriesController@show');
         $router->put('entries/{id}', 'EntriesController@update');
-        $router->delete('entries/{id}', 'EntriesController@delete');
+//        $router->delete('entries/{id}', 'EntriesController@delete');
 
         // Categories Routes
         $router->get('categories', 'CategoriesController@index');
         $router->post('categories', 'CategoriesController@store');
-        $router->put('categories/{id}', 'CategoriesController@update');
-        $router->delete('categories/{id}', 'CategoriesController@delete');
+//        $router->put('categories/{id}', 'CategoriesController@update');
+//        $router->delete('categories/{id}', 'CategoriesController@delete');
 
         // Users Routes
         $router->get('users', 'UsersController@index');
@@ -41,9 +41,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
         $router->get('documents/{documentId}', 'DocumentController@show');
         $router->get('documents/{documentId}/thumbnail', 'DocumentController@thumbnail');
-        $router->delete('documents/{documentId}', 'DocumentController@destroy');
-//        $router->post('documents', 'DocumentsController@store');
-//        $router->get('documents/{id}', 'DocumentsController@show');
+//        $router->delete('documents/{documentId}', 'DocumentController@destroy');
 
         // CSV Export/Import Routes
 //        $router->get('export', 'ExportController@exportCSV');
