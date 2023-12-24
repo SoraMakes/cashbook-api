@@ -37,21 +37,11 @@ class DocumentController extends Controller {
             return response()->json($validator->errors(), 400);
         }
 
-        $documents = [];
-
         DB::beginTransaction();
         try {
             $documents = self::processOneOrMultipleFiles($request->document, $entryId);
         } catch (Exception $e) {
             DB::rollBack();
-
-            // Delete any files that were saved before the error occurred
-            foreach ($documents as $document) {
-                Storage::delete($document['file_path']);
-                Storage::delete($document['thumbnail_path']);
-            }
-
-            // Rethrow the exception to trigger the rollback
             throw $e;
         }
         DB::commit();
@@ -60,13 +50,28 @@ class DocumentController extends Controller {
         return response()->json($documents, 201);
     }
 
+    /**
+     * @throws Exception
+     */
     public static function processOneOrMultipleFiles($files, $entryId): array {
-        if (is_array($files)) {
-            foreach ($files as $file) {
-                $documents[] = self::processFile($file, $entryId); // process each file
+        $documents = [];
+        try {
+            if (is_array($files)) {
+                foreach ($files as $file) {
+                    $documents[] = self::processFile($file, $entryId); // process each file
+                }
+            } else {
+                $documents[] = self::processFile($files, $entryId); // process single file
             }
-        } else {
-            $documents[] = self::processFile($files, $entryId); // process single file
+        } catch (Exception $e) {
+            // Delete any files that were saved before the error occurred
+            foreach ($documents as $document) {
+                Storage::delete($document['file_path']);
+                Storage::delete($document['thumbnail_path']);
+            }
+
+            // throw the exception noticing that something went wrong while processing the files
+            throw new Exception('Something went wrong while processing the files');
         }
         return $documents;
     }

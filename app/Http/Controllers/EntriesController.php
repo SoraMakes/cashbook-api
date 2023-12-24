@@ -23,6 +23,9 @@ class EntriesController extends Controller {
         return response()->json($entry, 200);
     }
 
+    /**
+     * @throws Exception
+     */
     public function store(Request $request) {
         // Validate the request
         $validator = Validator::make($request->all(), [
@@ -62,28 +65,24 @@ class EntriesController extends Controller {
         }
 
         // process documents
-        $documents = [];
-        try {
-            $documents = DocumentController::processOneOrMultipleFiles($request->document, $entry->id);
-        } catch (Exception $e) {
-            DB::rollBack();
-
-            // Delete any files that were saved before the error occurred
-            foreach ($documents as $document) {
-                Storage::delete($document['file_path']);
-                Storage::delete($document['thumbnail_path']);
+        if ($request->has('document') && !empty($request->document)) {
+            try {
+                DocumentController::processOneOrMultipleFiles($request->document, $entry->id);
+            } catch (Exception $e) {
+                DB::rollBack();
+                throw $e;
             }
-
-            // Rethrow the exception to trigger the rollback
-            throw $e;
         }
-        DB::commit();
 
+        DB::commit();
 
 
         return response()->json($entry, 201);
     }
 
+    /**
+     * @throws Exception
+     */
     public function update($id, Request $request) {
         $request['id'] = $id; // add id to request so it can be validated
         // Validate the request
@@ -151,21 +150,15 @@ class EntriesController extends Controller {
         }
 
         // process documents
-        $documents = [];
-        try {
-            $documents = DocumentController::processOneOrMultipleFiles($request->document, $newEntry->id);
-        } catch (Exception $e) {
-            DB::rollBack();
-
-            // Delete any files that were saved before the error occurred
-            foreach ($documents as $document) {
-                Storage::delete($document['file_path']);
-                Storage::delete($document['thumbnail_path']);
+        if ($request->has('document') && !empty($request->document)) {
+            try {
+                DocumentController::processOneOrMultipleFiles($request->document, $newEntry->id);
+            } catch (Exception $e) {
+                DB::rollBack();
+                throw $e;
             }
-
-            // Rethrow the exception to trigger the rollback
-            throw $e;
         }
+
         DB::commit();
 
 
