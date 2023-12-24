@@ -1,0 +1,19 @@
+PUT http://localhost:8001/api/entries/2
+Content-Type: application/json
+Authorization: Bearer 0i5ToOgepyWnqTnbLplWJL7rLI95ifbEE0fTc16IjxqwhhXHFe4p8UtfhIg1HQPOcGwOHN0ObeGwnXeo
+
+{
+    "category_id": 1,
+    "amount": 100,
+    "payed_received": false,
+    "recipient_sender": "John Doe",
+    "payment_method": "cash",
+    "description": "Test entry",
+    "no_invoice": false,
+    "date": "2019-01-01",
+    "user_id_last_modified": "Null"
+}
+
+###
+
+
