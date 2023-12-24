@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Validator;
 use Imagick;
 use Intervention\Image\ImageManager;
 use Spatie\PdfToImage\Pdf;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class DocumentController extends Controller {
     /**
@@ -141,9 +142,15 @@ class DocumentController extends Controller {
 
             if (file_exists($path)) {
                 $file = file_get_contents($path);
-                $type = mime_content_type($path);
+                $type = mime_content_type($path);  // TODO: save mime type in db
 
-                return Response::make($file, 200)->header("Content-Type", $type);
+                $headers = [
+                    'Content-Type' => $type,
+                ];
+
+                return response()->download($path, $document->original_filename, $headers);
+//                $response = new BinaryFileResponse($path, 200 , $headers);
+//                return Response::make($file, 200)->header("Content-Type", $type);
             }
         }
 

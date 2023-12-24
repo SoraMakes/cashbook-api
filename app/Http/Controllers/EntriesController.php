@@ -84,6 +84,8 @@ class EntriesController extends Controller {
      * @throws Exception
      */
     public function update($id, Request $request) {
+        # todo: adjust document references to new entry
+
         $request['id'] = $id; // add id to request so it can be validated
         // Validate the request
         $validator = Validator::make($request->all(), [

@@ -20,6 +20,8 @@ class Document extends Model {
         'thumbnail_path',
     ];
 
+    protected $hidden = ['deleted_at', 'file_path', 'thumbnail_path'];
+
     /**
      * Get the entry associated with the document.
      */
