@@ -7,10 +7,37 @@ services:
     image: mariadb
     restart: always
     ports:
-      - 3306:3306
+      - "3306:3306"
     environment:
       MARIADB_ROOT_PASSWORD: example
       MARIADB_DATABASE: cashbook
       MARIADB_USER: user
       MARIADB_PASSWORD: secret
+#    networks:
+#      - app-network
+#    volumes:
+#      - dbdata:/var/lib/mysql
 
+#  app:
+#    build: .
+#    restart: unless-stopped
+#    tty: true
+#    working_dir: /var/www
+#    networks:
+#      - app-network
+#
+#  webserver:
+#    image: nginx:alpine
+#    restart: unless-stopped
+#    ports:
+#      - "8001:80"
+#    networks:
+#      - app-network
+#
+#networks:
+#  app-network:
+#    driver: bridge
+#
+#volumes:
+#  dbdata:
+#    driver: local

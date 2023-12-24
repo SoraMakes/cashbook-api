@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Document extends Model
-{
+class Document extends Model {
+    use SoftDeletes;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -14,7 +16,8 @@ class Document extends Model
     protected $fillable = [
         'entry_id',
         'file_path',
-        // Add any other fields you want to be mass assignable
+        'original_filename',
+        'thumbnail_path',
     ];
 
     /**

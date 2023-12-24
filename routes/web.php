@@ -36,6 +36,12 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('users', 'UsersController@index');
 
         // Documents Routes
+        $router->post('entries/{entryId}/documents', 'DocumentController@store');
+        $router->get('entries/{entryId}/documents', 'DocumentController@index');
+
+        $router->get('documents/{documentId}', 'DocumentController@show');
+        $router->get('documents/{documentId}/thumbnail', 'DocumentController@thumbnail');
+        $router->delete('documents/{documentId}', 'DocumentController@destroy');
 //        $router->post('documents', 'DocumentsController@store');
 //        $router->get('documents/{id}', 'DocumentsController@show');
 

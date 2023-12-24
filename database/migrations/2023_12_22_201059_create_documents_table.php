@@ -15,6 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('entry_id')->constrained('entries')->onDelete('cascade');
             $table->string('file_path');
+            $table->string('original_filename');
+            $table->string('thumbnail_path')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }
