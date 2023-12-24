@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
 use Imagick;
 use Intervention\Image\ImageManager;
+use Spatie\PdfToImage\Pdf;
 
 class DocumentController extends Controller
 {
@@ -35,20 +36,32 @@ class DocumentController extends Controller
             mkdir(storage_path() . '/app/thumbnails');
         }
 
-        if ($this->isImage($file)) {
-            // Create and store thumbnail for images
+        if ($this->isPDF($file)) {
+            $pdf = new Pdf($file);
+            $pdf->setPage(1);
+            // save to temparary file
+            $tmp_file = tempnam(sys_get_temp_dir(), 'jpg');
+            $pdf->saveImage($tmp_file);
+            $thumbnail = ImageManager::imagick()->read($tmp_file);
+            unlink($tmp_file);
+        } elseif ($this->isImage($file)) {
             $thumbnail = ImageManager::imagick()->read($file);
-            if ($thumbnail->width() > $thumbnail->height())
-                $thumbnail->scaleDown(null, 128);
-            else
-                $thumbnail->scaleDown(128);
-            $thumbnailPath = 'thumbnails/' . $filename;
-            $thumbnail->toAvif(50)->save(storage_path() . '/app/' . $thumbnailPath);
-
-        } elseif ($this->isPDF($file)) {
-            // Create and store thumbnail for PDFs
-            $thumbnailPath = $this->createPDFThumbnail($filePath, $filename);
+        } else {
+            return response()->json(['message' => 'File type not supported'], 400);
         }
+
+        // Create and store thumbnail for images
+        // if original file was pdf: it is image now
+        if ($thumbnail->width() > $thumbnail->height())
+            $thumbnail->scaleDown(null, 128);
+        else
+            $thumbnail->scaleDown(128);
+
+        $extension = 'avif'; // Define the extension
+        $filenameWithoutExtension = pathinfo($filename, PATHINFO_FILENAME);
+        $thumbnailFilename = $filenameWithoutExtension . '.' . $extension;
+        $thumbnailPath = 'thumbnails/' . $thumbnailFilename;
+        $thumbnail->toAvif(50)->save(storage_path() . '/app/' . $thumbnailPath);
 
         $document = new Document([
             'entry_id' => $entryId,
@@ -121,6 +134,7 @@ class DocumentController extends Controller
 
     private function createPDFThumbnail($filePath, $filename)
     {
+        // maybe use spatie/pdf-to-image and then image intervention to create thumbnail
         $imagick = new Imagick();
         $imagick->readImage(storage_path('app/' . $filePath . '[0]'));
         $imagick->setImageFormat('jpg');

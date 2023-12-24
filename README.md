@@ -16,3 +16,22 @@ open php builtin webserver inside WSL to lan: netsh interface portproxy add v4to
 
 
 upload_max_filesize and post_max_size  min 10MB
+
+requires imagemagick and ghostscript
+
+
+Edit the Imagick Policy File:
+
+Locate and edit the Imagick policy file, usually named policy.xml. This file can typically be found at /etc/ImageMagick-6/policy.xml or /etc/ImageMagick-7/policy.xml, depending on the version and system.
+
+Look for a policy with PDF in the pattern attribute and Rights attribute set to None. It will look something like this:
+
+xml
+
+<policy domain="coder" rights="none" pattern="PDF" />
+
+Change rights="none" to rights="read|write" to enable PDF processing:
+
+xml
+
+<policy domain="coder" rights="read|write" pattern="PDF" />
