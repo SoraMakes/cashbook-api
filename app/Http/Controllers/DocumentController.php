@@ -106,9 +106,9 @@ class DocumentController extends Controller {
         // Create and store thumbnail for images
         // if original file was pdf: it is image now
         if ($thumbnail->width() > $thumbnail->height())
-            $thumbnail->scaleDown(null, 128);
+            $thumbnail->scaleDown(null, 100);
         else
-            $thumbnail->scaleDown(128);
+            $thumbnail->scaleDown(100);
 
         $extension = 'webp'; // Define the extension
         $filenameWithoutExtension = pathinfo($filename, PATHINFO_FILENAME);
@@ -141,16 +141,9 @@ class DocumentController extends Controller {
             $path = storage_path('app/' . $document->thumbnail_path);
 
             if (file_exists($path)) {
-                $file = file_get_contents($path);
-                $type = mime_content_type($path);  // TODO: save mime type in db
+                $type = mime_content_type($path);
 
-                $headers = [
-                    'Content-Type' => $type,
-                ];
-
-                return response()->download($path, $document->original_filename, $headers);
-//                $response = new BinaryFileResponse($path, 200 , $headers);
-//                return Response::make($file, 200)->header("Content-Type", $type);
+                return response()->download($path, $document->original_filename, ['Content-Type' => $type]);
             }
         }
 
@@ -162,10 +155,9 @@ class DocumentController extends Controller {
 
         $path = storage_path('app/' . $document->file_path);
         if (file_exists($path)) {
-            $file = file_get_contents($path);
             $type = mime_content_type($path);
 
-            return Response::make($file, 200)->header("Content-Type", $type);
+            return response()->download($path, $document->original_filename, ['Content-Type' => $type]);
         }
 
         return response('Document not found', 404);
