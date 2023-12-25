@@ -29,8 +29,8 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Install Composer globally
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Configure PHP-FPM to give Child Processes a chance to clean up before they are terminated
-RUN echo "process_control_timeout = 5s" >> /usr/local/etc/php-fpm.conf
+# Replace or add process_control_timeout setting in php-fpm.conf to let PHP-FPM exit gracefully
+RUN sed -i '/process_control_timeout/c\process_control_timeout = 5s' /usr/local/etc/php-fpm.conf
 
 # Expose the port Nginx is reachable on
 EXPOSE 80
