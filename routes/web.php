@@ -13,6 +13,10 @@
 |
 */
 
+$router->get('docs', function () use ($router) {
+    return view('docs');
+});
+
 $router->group(['prefix' => 'api'], function () use ($router) {
     // Authentication Routes
     $router->post('login', 'AuthController@login');
