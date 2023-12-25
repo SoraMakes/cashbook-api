@@ -127,25 +127,26 @@ class EntriesController extends Controller {
             }
         }
 
-        $updatedData = [
-            'category_id' => $request->input('category_id', $originalEntry->category_id),
-            'amount' => $request->input('amount', $originalEntry->amount),
-            'recipient_sender' => $request->input('recipient_sender', $originalEntry->recipient_sender),
-            'payment_method' => $request->input('payment_method', $originalEntry->payment_method),
-            'description' => $request->input('description', $originalEntry->description),
-            'no_invoice' => $request->input('no_invoice', $originalEntry->no_invoice),
-            'date' => $request->input('date', $originalEntry->date),
-        ];
-
         DB::beginTransaction();
 
         // Create a new entry with the updated data
         try {
-            $newEntry = $originalEntry->replicateWithHistory($updatedData, Auth::id());
-            $newEntry->save();
+            // create copy of previous
+            $oldEntry = clone $originalEntry;
+
+            $originalEntry->update([
+                'entry_id' => $oldEntry->id,
+                'category_id' => $request->input('category_id', $originalEntry->category_id),
+                'amount' => $request->input('amount', $originalEntry->amount),
+                'recipient_sender' => $request->input('recipient_sender', $originalEntry->recipient_sender),
+                'payment_method' => $request->input('payment_method', $originalEntry->payment_method),
+                'description' => $request->input('description', $originalEntry->description),
+                'no_invoice' => $request->input('no_invoice', $originalEntry->no_invoice),
+                'date' => $request->input('date', $originalEntry->date),
+            ]);
 
             // Soft delete the original entry
-            $originalEntry->delete();
+            $oldEntry->delete();
         } catch (Exception $e) {
             DB::rollBack();
             return response()->json(['error' => 'Something went wrong while updating the entry'], 400);
@@ -154,7 +155,7 @@ class EntriesController extends Controller {
         // process documents
         if ($request->has('document') && !empty($request->document)) {
             try {
-                DocumentController::processOneOrMultipleFiles($request->document, $newEntry->id);
+                DocumentController::processOneOrMultipleFiles($request->document, $originalEntry->id);
             } catch (Exception $e) {
                 DB::rollBack();
                 throw $e;
@@ -164,7 +165,7 @@ class EntriesController extends Controller {
         DB::commit();
 
 
-        return response()->json($newEntry, 200);
+        return response()->json($originalEntry, 200);
     }
 
     public function delete($id) {

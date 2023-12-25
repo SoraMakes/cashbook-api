@@ -44,6 +44,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('entries/{entryId}/documents', 'DocumentController@index');
 
         $router->get('documents/{documentId}', 'DocumentController@show');
+        $router->get('documents/{documentId}/original', 'DocumentController@original');
         $router->get('documents/{documentId}/thumbnail', 'DocumentController@thumbnail');
 //        $router->delete('documents/{documentId}', 'DocumentController@destroy');
 

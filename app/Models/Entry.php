@@ -64,16 +64,4 @@ class Entry extends Model {
     public function next_version(): \Illuminate\Database\Eloquent\Relations\HasOne {
         return $this->hasOne(Entry::class, 'entry_id');
     }
-
-    /**
-     * Clone the entry and return a new instance.
-     */
-    public function replicateWithHistory($updatedData, $userId): Entry {
-        $newEntry = $this->replicate();
-        $newEntry->fill($updatedData);
-        $newEntry->user_id_last_modified = $userId;
-        $newEntry->created_at = $this->created_at; // retain original creation timestamp
-        $newEntry->entry_id = $this->id; // set the entry_id to the original entry's id
-        return $newEntry;
-    }
 }

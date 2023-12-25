@@ -59,10 +59,10 @@ class DocumentController extends Controller {
         try {
             if (is_array($files)) {
                 foreach ($files as $file) {
-                    $documents[] = self::processFile($file, $entryId); // process each file
+                    $documents = array_merge($documents, self::processFile($file, $entryId)); // process each file
                 }
             } else {
-                $documents[] = self::processFile($files, $entryId); // process single file
+                $documents = array_merge($documents, self::processFile($files, $entryId)); // process single file
             }
         } catch (Exception $e) {
             // Delete any files that were saved before the error occurred
@@ -77,55 +77,83 @@ class DocumentController extends Controller {
         return $documents;
     }
 
-    private static function processFile($file, $entryId): \Illuminate\Http\JsonResponse|Document {
-        $originalFilename = $file->getClientOriginalName();
-        $filename = md5(time() . $file->getClientOriginalName()) . '.' . $file->getClientOriginalExtension();
-        $filePath = $file->storeAs('documents', $filename);
-        $thumbnailPath = null;
-
-
+    private static function processFile($file, $entryId) {
         // create thumbnails folder if it doesn't exist
         if (!file_exists(storage_path() . '/app/thumbnails')) {
             mkdir(storage_path() . '/app/thumbnails');
         }
+        // create thumbnails folder if it doesn't exist
+        if (!file_exists(storage_path() . '/app/originals')) {
+            mkdir(storage_path() . '/app/originals');
+        }
+        // create thumbnails folder if it doesn't exist
+        if (!file_exists(storage_path() . '/app/documents')) {
+            mkdir(storage_path() . '/app/documents');
+        }
+
+
+        $filename = $file->getClientOriginalName();
+        $filename_hash = md5(time() . $file->getClientOriginalName()) . '.' . $file->getClientOriginalExtension();
+        $originalPath = $file->storeAs('documents', $filename_hash);
+
 
         if (self::isPDF($file)) {
             $pdf = new Pdf($file);
-            $pdf->setPage(1);
-            // save to temparary file
-            $tmp_file = tempnam(sys_get_temp_dir(), 'jpg');
-            $pdf->saveImage($tmp_file);
-            $thumbnail = ImageManager::imagick()->read($tmp_file);
-            unlink($tmp_file);
+
+            // PDFs can have multiple pages, storing every page as a separate image
+            for ($i = 1; $i <= $pdf->getNumberOfPages(); $i++) {
+                $pdf->setPage($i);
+                // save to temparary file
+                $tmp_file = tempnam(sys_get_temp_dir(), 'jpg');
+                $pdf->saveImage($tmp_file);
+                $inputImage[] = ImageManager::imagick()->read($tmp_file);
+                unlink($tmp_file);
+            }
         } elseif (self::isImage($file)) {
-            $thumbnail = ImageManager::imagick()->read($file);
+            $inputImage[] = ImageManager::imagick()->read($file);
         } else {
             return response()->json(['message' => 'File type not supported'], 400);
         }
 
-        // Create and store thumbnail for images
-        // if original file was pdf: it is image now
-        if ($thumbnail->width() > $thumbnail->height())
-            $thumbnail->scaleDown(null, 100);
-        else
-            $thumbnail->scaleDown(100);
-
         $extension = 'webp'; // Define the extension
-        $filenameWithoutExtension = pathinfo($filename, PATHINFO_FILENAME);
-        $thumbnailFilename = $filenameWithoutExtension . '.' . $extension;
-        $thumbnailPath = 'thumbnails/' . $thumbnailFilename;
-        $thumbnail->toWebp(50)->save(storage_path() . '/app/' . $thumbnailPath);
+        $filenameWithoutExtension = pathinfo($filename_hash, PATHINFO_FILENAME);
+        $convertImageFilename = $filenameWithoutExtension . '.' . $extension;
 
-        $document = new Document([
-            'entry_id' => $entryId,
-            'file_path' => $filePath,
-            'original_filename' => $originalFilename,
-            'thumbnail_path' => $thumbnailPath,
-        ]);
+        $savedDocuments = [];
 
-        $document->save();
+        foreach ($inputImage as $page) {
+            $thumbnail = $page->clone();
+            $document = $page;
+            // Create and store thumbnail for images; if original file was pdf: it is image now
+            if ($document->width() > $document->height()) {
+                $document->scaleDown(null, 1920);
+                $thumbnail->scaleDown(null, 100);
+            } else {
+                $document->scaleDown(1920);
+                $thumbnail->scaleDown(100);
+            }
 
-        return $document;
+            $thumbnailPath = 'thumbnails/' . $convertImageFilename;
+            $thumbnail->toWebp(50)->save(storage_path() . '/app/' . $thumbnailPath);
+
+            $documentPath = 'originals/' . $convertImageFilename;
+            $document->toWebp(50)->save(storage_path() . '/app/' . $documentPath);
+
+
+            $document = new Document([
+                'entry_id' => $entryId,
+                'original_path' => $originalPath,
+                'document_path' => $documentPath,
+                'original_filename' => $filename,
+                'thumbnail_path' => $thumbnailPath,
+            ]);
+
+            $document->save();
+            $savedDocuments[] = $document;
+        }
+
+
+        return $savedDocuments;
     }
 
 
@@ -135,10 +163,26 @@ class DocumentController extends Controller {
     }
 
     public function thumbnail($documentId) {
+        return $this->load_and_return_file($documentId, 'thumbnail');
+    }
+
+    private function load_and_return_file($documentId, $type) {
         $document = Document::findOrFail($documentId);
 
         if ($document->thumbnail_path) {
-            $path = storage_path('app/' . $document->thumbnail_path);
+            switch ($type) {
+                case 'thumbnail':
+                    $path = storage_path('app/' . $document->thumbnail_path);
+                    break;
+                case 'document':
+                    $path = storage_path('app/' . $document->document_path);
+                    break;
+                case 'original':
+                    $path = storage_path('app/' . $document->original_path);
+                    break;
+                default:
+                    return response('File not found', 404);
+            }
 
             if (file_exists($path)) {
                 $type = mime_content_type($path);
@@ -151,16 +195,11 @@ class DocumentController extends Controller {
     }
 
     public function show($documentId) {
-        $document = Document::findOrFail($documentId);
+        return $this->load_and_return_file($documentId, 'document');
+    }
 
-        $path = storage_path('app/' . $document->file_path);
-        if (file_exists($path)) {
-            $type = mime_content_type($path);
-
-            return response()->download($path, $document->original_filename, ['Content-Type' => $type]);
-        }
-
-        return response('Document not found', 404);
+    public function original($documentId) {
+        return $this->load_and_return_file($documentId, 'original');
     }
 
     public function destroy($documentId) {

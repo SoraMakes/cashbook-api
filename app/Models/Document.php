@@ -15,7 +15,8 @@ class Document extends Model {
      */
     protected $fillable = [
         'entry_id',
-        'file_path',
+        'original_path',
+        'document_path',
         'original_filename',
         'thumbnail_path',
     ];
