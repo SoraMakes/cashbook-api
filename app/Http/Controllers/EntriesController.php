@@ -151,6 +151,7 @@ class EntriesController extends Controller {
                 'description' => $request->input('description', $originalEntry->description),
                 'no_invoice' => $request->input('no_invoice', $originalEntry->no_invoice),
                 'date' => $request->input('date', $originalEntry->date),
+                'user_id_last_modified' => Auth::id(),
             ]);
             $originalEntry->refresh();
         } catch (Exception $e) {

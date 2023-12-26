@@ -23,9 +23,8 @@ return [
             'driver' => 'monolog',
             'handler' => StreamHandler::class,
             'formatter' => env('LOG_STDERR_FORMATTER'),
-            'level' => 'debug',
             'with' => [
-                'stream' => 'php://stderr',
+                'stream' => 'php://err',
             ],
         ]
     ]
