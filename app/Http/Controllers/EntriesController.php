@@ -93,7 +93,7 @@ class EntriesController extends Controller {
         $validator = Validator::make($request->all(), [
             'id' => 'required|integer|exists:entries,id',
             'category_id' => 'sometimes|integer|exists:categories,id',
-            'amount' => 'sometimes|numeric',
+            'amount' => 'sometimes|nullable|numeric',
             'is_income' => 'sometimes|boolean',
             'recipient_sender' => 'sometimes|string|max:255',
             'payment_method' => 'sometimes|in:cash,bank_transfer,not_payed',
@@ -136,7 +136,7 @@ class EntriesController extends Controller {
         // Create a new entry with the updated data
         try {
             // create copy of original entry
-            $history_entry = Entry::create(array_merge($originalEntry, ['id' => null]));
+            $history_entry = Entry::create(array_merge($originalEntry->toArray(), ['id' => null]));
             // and delete it (keeping it as history)
             $history_entry->delete();
 
@@ -156,7 +156,7 @@ class EntriesController extends Controller {
         } catch (Exception $e) {
             DB::rollBack();
             Log::notice('Something went wrong while updating the entry', ['id' => $id, 'error' => $e->getMessage()]);
-            return response()->json(['error' => 'Something went wrong while updating the entry'], 400);
+            return response()->json(['error' => 'Something went wrong while updating the entry.'], 400);
         }
 
         // process documents
@@ -166,7 +166,7 @@ class EntriesController extends Controller {
             } catch (Exception $e) {
                 DB::rollBack();
                 Log::notice('Something went wrong while updating the entry', ['id' => $id, 'error' => $e->getMessage()]);
-                return response()->json(['error' => 'Something went wrong while updating the entry'], 400);
+                return response()->json(['error' => 'Something went wrong while updating the entry during document processing.'], 400);
             }
         }
 
