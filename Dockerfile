@@ -17,6 +17,9 @@ RUN apk add --no-cache imagemagick-dev autoconf g++ make \
 # Copy your application code to the container
 COPY . /var/www/html
 
+# Allow the web server user to write to storage directory
+RUN chown -R www-data:www-data /var/www/html/storage
+
 # Set working directory
 WORKDIR /var/www/html
 

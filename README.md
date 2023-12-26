@@ -35,3 +35,8 @@ Change rights="none" to rights="read|write" to enable PDF processing:
 xml
 
 <policy domain="coder" rights="read|write" pattern="PDF" />
+
+
+---
+
+create user: docker exec api php /var/www/html/artisan user:create <username> <password> <token>
