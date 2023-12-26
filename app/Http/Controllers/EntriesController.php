@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class EntriesController extends Controller {
     public function index() {
@@ -85,7 +86,7 @@ class EntriesController extends Controller {
      * @throws Exception
      */
     public function update($id, Request $request) {
-        # todo: adjust document references to new entry
+        Log::debug('Called update entry', ['id' => $id]);
 
         $request['id'] = $id; // add id to request so it can be validated
         // Validate the request
@@ -114,7 +115,6 @@ class EntriesController extends Controller {
             return response()->json(['errors' => $validator->errors()], 400);
         }
 
-
         try {
             $originalEntry = Entry::findOrFail($id);
         } catch (Exception $e) {
@@ -123,8 +123,10 @@ class EntriesController extends Controller {
 
             // Check if entry is not found or if it's soft-deleted
             if (!$originalEntry) {
+                Log::info('Entry not found', ['id' => $id]);
                 return response()->json(['error' => 'Entry not found'], 404);
             } elseif ($originalEntry->trashed()) {
+                Log::info('Entry is deleted', ['id' => $id]);
                 return response()->json(['error' => 'Entry is deleted'], 410); // 410 Gone status code
             }
         }
@@ -133,11 +135,14 @@ class EntriesController extends Controller {
 
         // Create a new entry with the updated data
         try {
-            // create copy of previous
-            $oldEntry = clone $originalEntry;
+            // create copy of original entry
+            $history_entry = Entry::create(array_merge($originalEntry, ['id' => null]));
+            // and delete it (keeping it as history)
+            $history_entry->delete();
+
 
             $originalEntry->update([
-                'entry_id' => $oldEntry->id,
+                'entry_id' => $history_entry->id,
                 'category_id' => $request->input('category_id', $originalEntry->category_id),
                 'amount' => $request->input('amount', $originalEntry->amount),
                 'is_income' => $request->input('is_income', $originalEntry->is_income),
@@ -147,11 +152,10 @@ class EntriesController extends Controller {
                 'no_invoice' => $request->input('no_invoice', $originalEntry->no_invoice),
                 'date' => $request->input('date', $originalEntry->date),
             ]);
-
-            // Soft delete the original entry
-            $oldEntry->delete();
+            $originalEntry->refresh();
         } catch (Exception $e) {
             DB::rollBack();
+            Log::notice('Something went wrong while updating the entry', ['id' => $id, 'error' => $e->getMessage()]);
             return response()->json(['error' => 'Something went wrong while updating the entry'], 400);
         }
 
@@ -161,12 +165,13 @@ class EntriesController extends Controller {
                 DocumentController::processOneOrMultipleFiles($request->document, $originalEntry->id);
             } catch (Exception $e) {
                 DB::rollBack();
-                throw $e;
+                Log::notice('Something went wrong while updating the entry', ['id' => $id, 'error' => $e->getMessage()]);
+                return response()->json(['error' => 'Something went wrong while updating the entry'], 400);
             }
         }
 
         DB::commit();
-
+        Log::info('Entry updated', ['id' => $id]);
 
         return response()->json($originalEntry, 200);
     }
