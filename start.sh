@@ -1,8 +1,5 @@
 #!/bin/sh
 
-# Install Composer dependencies
-composer install --no-dev --optimize-autoloader
-
 # Run Laravel migrations
 php artisan migrate
 

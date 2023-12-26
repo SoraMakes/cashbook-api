@@ -18,6 +18,7 @@ class Entry extends Model {
         'user_id_last_modified',
         'category_id',
         'amount',
+        'is_income',
         'recipient_sender',
         'payment_method',
         'description',

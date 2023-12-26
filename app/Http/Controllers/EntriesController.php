@@ -30,7 +30,8 @@ class EntriesController extends Controller {
         // Validate the request
         $validator = Validator::make($request->all(), [
             'category_id' => 'required|integer|exists:categories,id',
-            'amount' => 'required|numeric',
+            'amount' => 'sometimes|nullable|numeric',
+            'is_income' => 'required|boolean',
             'recipient_sender' => 'required|string|max:255',
             'payment_method' => 'required|in:cash,bank_transfer,not_payed',
             'description' => 'required|string',
@@ -92,6 +93,7 @@ class EntriesController extends Controller {
             'id' => 'required|integer|exists:entries,id',
             'category_id' => 'sometimes|integer|exists:categories,id',
             'amount' => 'sometimes|numeric',
+            'is_income' => 'sometimes|boolean',
             'recipient_sender' => 'sometimes|string|max:255',
             'payment_method' => 'sometimes|in:cash,bank_transfer,not_payed',
             'description' => 'sometimes|string',
@@ -138,6 +140,7 @@ class EntriesController extends Controller {
                 'entry_id' => $oldEntry->id,
                 'category_id' => $request->input('category_id', $originalEntry->category_id),
                 'amount' => $request->input('amount', $originalEntry->amount),
+                'is_income' => $request->input('is_income', $originalEntry->is_income),
                 'recipient_sender' => $request->input('recipient_sender', $originalEntry->recipient_sender),
                 'payment_method' => $request->input('payment_method', $originalEntry->payment_method),
                 'description' => $request->input('description', $originalEntry->description),

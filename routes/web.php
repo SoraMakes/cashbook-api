@@ -25,7 +25,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->group(['middleware' => 'auth'], function () use ($router) {
         // Entries Routes
         $router->get('entries', 'EntriesController@index');
-//        $router->post('entries', 'EntriesController@store');
+        $router->post('entries', 'EntriesController@store');
 //        $router->get('entries/{id}', 'EntriesController@show');
         $router->put('entries/{id}', 'EntriesController@update');
 //        $router->delete('entries/{id}', 'EntriesController@delete');
