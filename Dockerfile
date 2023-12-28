@@ -17,6 +17,9 @@ RUN apk add --no-cache imagemagick-dev autoconf g++ make \
 # Copy your application code to the container
 COPY . /var/www/html
 
+# Copy the default environment file
+RUN mv /var/www/html/.env.default /var/www/html/.env
+
 # Allow the web server user to write to storage directory
 RUN chown -R www-data:www-data /var/www/html/storage
 

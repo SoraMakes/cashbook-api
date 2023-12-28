@@ -9,7 +9,7 @@ services:
     environment:
       MARIADB_ROOT_PASSWORD: example
       MARIADB_DATABASE: cashbook
-      MARIADB_USER: user
+      MARIADB_USER: cashbook
       MARIADB_PASSWORD: secret
 
 
