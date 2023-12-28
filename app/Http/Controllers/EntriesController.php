@@ -86,12 +86,11 @@ class EntriesController extends Controller {
      * @throws Exception
      */
     public function update($id, Request $request) {
-        Log::debug('Called update entry', ['id' => $id]);
+        Log::debug('Called update entry', ['id' => $id, 'request' => $request->all()]);
 
-        $request['id'] = $id; // add id to request so it can be validated
+        $request['id'] = $id;
         // Validate the request
         $validator = Validator::make($request->all(), [
-            'id' => 'required|integer|exists:entries,id',
             'category_id' => 'sometimes|integer|exists:categories,id',
             'amount' => 'sometimes|nullable|numeric',
             'is_income' => 'sometimes|boolean',
@@ -139,6 +138,7 @@ class EntriesController extends Controller {
             $history_entry = Entry::create(array_merge($originalEntry->toArray(), ['id' => null]));
             // and delete it (keeping it as history)
             $history_entry->delete();
+            Log::debug('Created and soft deleted history entry', ['id' => $history_entry->id]);
 
 
             $originalEntry->update([
@@ -153,6 +153,9 @@ class EntriesController extends Controller {
                 'date' => $request->input('date', $originalEntry->date),
                 'user_id_last_modified' => Auth::id(),
             ]);
+            Log::debug('request', ['request' => $request->all()]);
+            Log::debug('recipientsender', ['recipientsender' => $request->input('recipient_sender', $originalEntry->recipient_sender)]);
+            Log::debug('Updated entry', ['updated entry' => $originalEntry->toArray()]);
             $originalEntry->refresh();
         } catch (Exception $e) {
             DB::rollBack();

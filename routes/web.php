@@ -26,8 +26,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         // Entries Routes
         $router->get('entries', 'EntriesController@index');
         $router->post('entries', 'EntriesController@store');
-//        $router->get('entries/{id}', 'EntriesController@show');
-        $router->put('entries/{id}', 'EntriesController@update');
+        $router->get('entries/{id}', 'EntriesController@show');
+        $router->post('entries/{id}', 'EntriesController@update');  // post is ugly workaround for php not being able to handle put requests with multipart/form-data
 //        $router->delete('entries/{id}', 'EntriesController@delete');
 
         // Categories Routes

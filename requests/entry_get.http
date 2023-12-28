@@ -1,0 +1,5 @@
+GET http://localhost:8001/api/entries/1
+Content-Type: application/json
+Authorization: Bearer 0i5ToOgepyWnqTnbLplWJL7rLI95ifbEE0fTc16IjxqwhhXHFe4p8UtfhIg1HQPOcGwOHN0ObeGwnXeo
+
+###

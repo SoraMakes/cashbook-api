@@ -1,43 +1,53 @@
-# Use root/example as user/password credentials
 version: '3.1'
 
 services:
-
   db:
     image: mariadb
-    restart: always
+    restart: unless-stopped
     ports:
-      - "3306:3306"
+      - "3308:3306"  # todo remove
     environment:
       MARIADB_ROOT_PASSWORD: example
       MARIADB_DATABASE: cashbook
       MARIADB_USER: user
       MARIADB_PASSWORD: secret
-#    networks:
-#      - app-network
-#    volumes:
-#      - dbdata:/var/lib/mysql
 
-#  app:
-#    build: .
-#    restart: unless-stopped
-#    tty: true
-#    working_dir: /var/www
-#    networks:
-#      - app-network
-#
-#  webserver:
-#    image: nginx:alpine
-#    restart: unless-stopped
-#    ports:
-#      - "8001:80"
-#    networks:
-#      - app-network
-#
-#networks:
-#  app-network:
-#    driver: bridge
-#
-#volumes:
-#  dbdata:
-#    driver: local
+
+    networks:
+      - app-network
+    volumes:
+      - db_data:/var/lib/mysql
+
+  api:
+    image: ghcr.io/glutamat42/cashbook-api:1.0.0-rc.1
+    restart: unless-stopped
+    environment:
+      APP_KEY: cca02837aa6277b9aad3bc0accc2f3cf
+      APP_URL: cashbook.markus-heck.dev
+      DB_HOST: db
+      DB_DATABASE: cashbook
+      DB_USERNAME: cashbook
+      DB_PASSWORD: secret
+      APP_DEBUG: false
+    ports:
+      - "8097:80"
+    networks:
+      - app-network
+    volumes:
+        - api_data:/var/www/html/storage
+
+  webapp:
+    image: ghcr.io/glutamat42/cashbook-app:1.0.0-rc.1
+    restart: unless-stopped
+    ports:
+      - "8098:80"
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
+  api_data:
+    driver: local
