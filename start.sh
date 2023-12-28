@@ -8,10 +8,10 @@ while ! mysqladmin ping -h$DB_HOST -P$DB_PORT -u$DB_USERNAME -p$DB_PASSWORD --si
 echo "db is up"
 
 # Run Laravel migrations
-su -l www-data -s /bin/sh -c "php /var/www/html/artisan migrate --force"
+su www-data -s /bin/sh -c "php /var/www/html/artisan migrate --force"
 
 # Generate API documentation
-su -l www-data -s /bin/sh -c "php /var/www/html/artisan scribe:generate"
+su www-data -s /bin/sh -c "php /var/www/html/artisan scribe:generate"
 
 # Start PHP-FPM in the background
 php-fpm &
