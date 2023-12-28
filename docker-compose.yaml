@@ -35,6 +35,8 @@ services:
       - app-network
     volumes:
         - api_data:/var/www/html/storage
+    depends_on:
+      - db
 
   webapp:
     image: ghcr.io/glutamat42/cashbook-app:1.0.0-rc.3

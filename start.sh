@@ -1,5 +1,8 @@
 #!/bin/sh
 
+while ! mysqladmin ping -h$DB_HOST -P$DB_PORT -u$DB_USERNAME -p$DB_PASSWORD --silent 2>/dev/null; do echo "db is starting" && sleep 1; done
+echo "db is up"
+
 # Run Laravel migrations
 php artisan migrate
 

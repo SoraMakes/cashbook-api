@@ -2,7 +2,7 @@
 FROM php:8.1-fpm-alpine
 
 # Install system dependencies including ImageMagick, Ghostscript, and ICU libraries
-RUN apk add --no-cache nginx imagemagick ghostscript icu-dev
+RUN apk add --no-cache nginx imagemagick ghostscript icu-dev mysql-client
 
 # Install PHP extensions required for Laravel/Lumen
 RUN docker-php-ext-install pdo pdo_mysql
