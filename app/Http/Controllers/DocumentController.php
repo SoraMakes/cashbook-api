@@ -94,7 +94,7 @@ class DocumentController extends Controller {
 
         $filename = $file->getClientOriginalName();
         $filename_hash = md5(time() . $file->getClientOriginalName()) . '.' . $file->getClientOriginalExtension();
-        $originalPath = $file->storeAs('documents', $filename_hash);
+        $originalPath = $file->storeAs('originals', $filename_hash);
 
 
         if (self::isPDF($file)) {
@@ -122,7 +122,7 @@ class DocumentController extends Controller {
         $savedDocuments = [];
 
         foreach ($inputImage as $page) {
-            $thumbnail = $page->clone();
+            $thumbnail = clone $page;
             $document = $page;
             // Create and store thumbnail for images; if original file was pdf: it is image now
             if ($document->width() > $document->height()) {
@@ -136,11 +136,12 @@ class DocumentController extends Controller {
             $thumbnailPath = 'thumbnails/' . $convertImageFilename;
             $thumbnail->toWebp(50)->save(storage_path() . '/app/' . $thumbnailPath);
 
-            $documentPath = 'originals/' . $convertImageFilename;
+            $documentPath = 'documents/' . $convertImageFilename;
             $document->toWebp(50)->save(storage_path() . '/app/' . $documentPath);
 
 
-            $document = new Document([
+
+            $document = Document::create([
                 'entry_id' => $entryId,
                 'original_path' => $originalPath,
                 'document_path' => $documentPath,
@@ -148,7 +149,6 @@ class DocumentController extends Controller {
                 'thumbnail_path' => $thumbnailPath,
             ]);
 
-            $document->save();
             $savedDocuments[] = $document;
         }
 

@@ -5,7 +5,6 @@ Authorization: Bearer 0i5ToOgepyWnqTnbLplWJL7rLI95ifbEE0fTc16IjxqwhhXHFe4p8UtfhI
 {
     "category_id": 1,
     "amount": 100,
-    "payed_received": false,
     "recipient_sender": "John Doe",
     "payment_method": "not_payed",
     "description": "Test entry",

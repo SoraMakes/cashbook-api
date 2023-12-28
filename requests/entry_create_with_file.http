@@ -1,0 +1,42 @@
+POST http://localhost:8001/api/entries
+Content-Type: multipart/form-data; boundary=boundary
+Authorization: Bearer 0i5ToOgepyWnqTnbLplWJL7rLI95ifbEE0fTc16IjxqwhhXHFe4p8UtfhIg1HQPOcGwOHN0ObeGwnXeo
+
+--boundary
+Content-Disposition: form-data; name="category_id"
+
+1
+--boundary
+Content-Disposition: form-data; name="amount"
+
+100
+--boundary
+Content-Disposition: form-data; name="recipient_sender"
+
+John Doe
+--boundary
+Content-Disposition: form-data; name="payment_method"
+
+not_payed
+--boundary
+Content-Disposition: form-data; name="description"
+
+Test entry
+--boundary
+Content-Disposition: form-data; name="no_invoice"
+
+0
+--boundary
+Content-Disposition: form-data; name="date"
+
+2019-01-01
+--boundary
+Content-Disposition: form-data; name="is_income"
+
+0
+--boundary
+Content-Disposition: form-data; name="document[]"; filename="sample.jpg"
+
+< C:/Users/heckmarm/Downloads/sample.jpg
+
+
