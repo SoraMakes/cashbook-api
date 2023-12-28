@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Document;
 use App\Models\Entry;
 use Exception;
 use Illuminate\Http\Request;
@@ -100,13 +101,14 @@ class EntriesController extends Controller {
             'no_invoice' => 'sometimes|boolean',
             'date' => 'sometimes|date',
             'document' => 'sometimes',
+            'deleted_documents' => 'sometimes|array',
         ]);
 
-        $validator->sometimes('document', 'file|mimes:avif,webp,jpg,jpeg,png,pdf|max:4096', function ($input) {
+        $validator->sometimes('document', 'file|mimes:avif,webp,jpg,jpeg,png,pdf|max:10240', function ($input) {
             return !is_array($input->document);
         });
 
-        $validator->sometimes('document.*', 'file|mimes:avif,webp,jpg,jpeg,png,pdf|max:4096', function ($input) {
+        $validator->sometimes('document.*', 'file|mimes:avif,webp,jpg,jpeg,png,pdf|max:10240', function ($input) {
             return is_array($input->document);
         });
 
@@ -171,6 +173,20 @@ class EntriesController extends Controller {
                 DB::rollBack();
                 Log::notice('Something went wrong while updating the entry', ['id' => $id, 'error' => $e->getMessage()]);
                 return response()->json(['error' => 'Something went wrong while updating the entry during document processing.'], 400);
+            }
+        }
+
+        // process deleted documents
+        if ($request->has('deleted_documents') && !empty($request->deleted_documents)) {
+            foreach ($request->deleted_documents as $documentId) {
+                try {
+                    $document = Document::findOrFail($documentId);
+                    $document->delete();
+                } catch (Exception $e) {
+                    DB::rollBack();
+                    Log::notice('Something went wrong while updating the entry during document deletion.', ['id' => $id, 'error' => $e->getMessage()]);
+                    return response()->json(['error' => 'Something went wrong while updating the entry during document deletion.'], 400);
+                }
             }
         }
 

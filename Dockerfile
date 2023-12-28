@@ -20,7 +20,8 @@ RUN apk add --no-cache imagemagick-dev autoconf g++ make \
     && apk del autoconf g++ make # Clean up unnecessary packages after installation
 
 # Copy your application code to the container
-COPY . /var/www/html
+COPY --chown=www-data . /var/www/html
+
 
 # Copy the default environment file
 RUN mv /var/www/html/.env.default /var/www/html/.env

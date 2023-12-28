@@ -1,8 +1,8 @@
 #!/bin/sh
 
 # apply php ini settings
-echo $PHP_UPLOAD_MAX_FILESIZE > /usr/local/etc/php/conf.d/uploads.ini
-echo $PHP_POST_MAX_SIZE >> /usr/local/etc/php/conf.d/uploads.ini
+echo upload_max_filesize=$PHP_UPLOAD_MAX_FILESIZE > /usr/local/etc/php/conf.d/uploads.ini
+echo post_max_size=$PHP_POST_MAX_SIZE >> /usr/local/etc/php/conf.d/uploads.ini
 
 while ! mysqladmin ping -h$DB_HOST -P$DB_PORT -u$DB_USERNAME -p$DB_PASSWORD --silent 2>/dev/null; do echo "db is starting" && sleep 1; done
 echo "db is up"
