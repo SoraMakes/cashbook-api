@@ -1,6 +1,11 @@
 # Use Alpine-based PHP 8.1 image
 FROM php:8.1-fpm-alpine
 
+# default values for env variables
+ENV PHP_UPLOAD_MAX_FILESIZE=${PHP_UPLOAD_MAX_FILESIZE:-"100M"}
+ENV PHP_POST_MAX_SIZE=${PHP_POST_MAX_SIZE:-"100M"}
+
+
 # Install system dependencies including ImageMagick, Ghostscript, and ICU libraries
 RUN apk add --no-cache nginx imagemagick ghostscript icu-dev mysql-client
 

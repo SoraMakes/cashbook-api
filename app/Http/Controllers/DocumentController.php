@@ -126,12 +126,11 @@ class DocumentController extends Controller {
             $document = $page;
             // Create and store thumbnail for images; if original file was pdf: it is image now
             if ($document->width() > $document->height()) {
-                $document->scaleDown(null, 1920);
                 $thumbnail->scaleDown(null, 100);
             } else {
-                $document->scaleDown(1920);
                 $thumbnail->scaleDown(100);
             }
+            $document->scaleDown(1920, 1920);
 
             $thumbnailPath = 'thumbnails/' . $convertImageFilename;
             $thumbnail->toWebp(50)->save(storage_path() . '/app/' . $thumbnailPath);
