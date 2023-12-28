@@ -4,7 +4,7 @@ while ! mysqladmin ping -h$DB_HOST -P$DB_PORT -u$DB_USERNAME -p$DB_PASSWORD --si
 echo "db is up"
 
 # Run Laravel migrations
-php artisan migrate
+php artisan migrate --force
 
 # Generate API documentation
 php artisan scribe:generate
