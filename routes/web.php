@@ -26,7 +26,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         // Entries Routes
         $router->get('entries', 'EntriesController@index');
         $router->post('entries', 'EntriesController@store');
-        $router->get('entries/{id}', 'EntriesController@show');
+        $router->get('entries/{id}', 'EntriesController@show');  // i think i enabled it for testing. is in app?
         $router->post('entries/{id}', 'EntriesController@update');  // post is ugly workaround for php not being able to handle put requests with multipart/form-data
 //        $router->delete('entries/{id}', 'EntriesController@delete');
 
@@ -41,8 +41,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
         // Documents Routes
         $router->post('entries/{entryId}/documents', 'DocumentController@store');
-        $router->get('entries/{entryId}/documents', 'DocumentController@index');
+        $router->get('entries/{entryId}/documents', 'DocumentController@getById');
 
+        $router->get('documents', 'DocumentController@index');
         $router->get('documents/{documentId}', 'DocumentController@show');
         $router->get('documents/{documentId}/original', 'DocumentController@original');
         $router->get('documents/{documentId}/thumbnail', 'DocumentController@thumbnail');

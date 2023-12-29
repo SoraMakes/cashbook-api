@@ -156,7 +156,7 @@ class DocumentController extends Controller {
     }
 
 
-    public function index($entryId) {
+    public function getById($entryId) {
         $documents = Document::where('entry_id', $entryId)->get();
         return response()->json($documents);
     }
@@ -191,6 +191,11 @@ class DocumentController extends Controller {
         }
 
         return response('Thumbnail not found', 404);
+    }
+
+    public function index() {
+        $documents = Document::all();
+        return response()->json($documents);
     }
 
     public function show($documentId) {
