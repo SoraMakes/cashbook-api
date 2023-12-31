@@ -4,9 +4,30 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 
 class Entry extends Model {
     use SoftDeletes;
+
+    protected static function boot() {
+        parent::boot();
+
+        // Add a deleting event listener
+        static::deleting(function ($entry) {
+            // Check if the model is being soft-deleted
+            if ($entry->isForceDeleting()) {
+                Log::info('Force deleting entry ' . $entry->id);
+                Log::error('Force deletion not implemented yet');
+            } else {
+                // Soft-delete related documents
+                $entry->documents()->each(function ($document) {
+                    Log::debug('Soft deleting document ' . $document->id);
+                    $document->delete();
+                });
+            }
+        });
+    }
+
 
     /**
      * The attributes that are mass assignable.
@@ -24,6 +45,13 @@ class Entry extends Model {
         'description',
         'no_invoice',
         'date',
+        'entry_id'
+    ];
+
+    protected $casts = [
+        'is_income' => 'boolean',
+        'no_invoice' => 'boolean',
+        'category_id' => 'integer',
     ];
 
     /**
@@ -54,7 +82,7 @@ class Entry extends Model {
     /**
      * Get the document associated with the entry.
      */
-    public function document(): \Illuminate\Database\Eloquent\Relations\HasMany {
+    public function documents(): \Illuminate\Database\Eloquent\Relations\HasMany {
         return $this->hasMany(Document::class);
     }
 

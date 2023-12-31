@@ -9,10 +9,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Imagick;
 use Intervention\Image\ImageManager;
 use Spatie\PdfToImage\Pdf;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class DocumentController extends Controller {
     /**
@@ -57,12 +58,11 @@ class DocumentController extends Controller {
     public static function processOneOrMultipleFiles($files, $entryId): array {
         $documents = [];
         try {
-            if (is_array($files)) {
-                foreach ($files as $file) {
-                    $documents = array_merge($documents, self::processFile($file, $entryId)); // process each file
-                }
-            } else {
-                $documents = array_merge($documents, self::processFile($files, $entryId)); // process single file
+            if (!is_array($files)) {
+                $files = [$files];
+            }
+            foreach ($files as $file) {
+                $documents = array_merge($documents, self::processFile($file, $entryId)); // process each file
             }
         } catch (Exception $e) {
             // Delete any files that were saved before the error occurred
@@ -112,6 +112,7 @@ class DocumentController extends Controller {
         } elseif (self::isImage($file)) {
             $inputImage[] = ImageManager::imagick()->read($file);
         } else {
+            Log::debug('File type not supported', ['file' => $file]);
             return response()->json(['message' => 'File type not supported'], 400);
         }
 
@@ -126,9 +127,9 @@ class DocumentController extends Controller {
             $document = $page;
             // Create and store thumbnail for images; if original file was pdf: it is image now
             if ($document->width() > $document->height()) {
-                $thumbnail->scaleDown(null, 100);
+                $thumbnail->scaleDown(null, 128);
             } else {
-                $thumbnail->scaleDown(100);
+                $thumbnail->scaleDown(128);
             }
             $document->scaleDown(1920, 1920);
 
@@ -139,8 +140,8 @@ class DocumentController extends Controller {
             $document->toWebp(50)->save(storage_path() . '/app/' . $documentPath);
 
 
-
             $document = Document::create([
+                'user_id' => Auth::id(),
                 'entry_id' => $entryId,
                 'original_path' => $originalPath,
                 'document_path' => $documentPath,
@@ -153,6 +154,20 @@ class DocumentController extends Controller {
 
 
         return $savedDocuments;
+    }
+
+    public function update($document) {
+        throw new Exception('Not implemented');
+//        // create copy of original category
+//        $history_entry = Entry::create(array_merge($category->toArray(), ['id' => null]));
+//        // and delete it (keeping it as history)
+//        $history_entry->delete();
+//        Log::debug('Created and soft deleted history entry', ['id' => $history_entry->id]);
+//
+//        $category->update(array_merge(
+//            $request->all()),
+//            ['user_last_modified_id' => Auth::id(), 'category_id' => $category->id]
+//        );
     }
 
 
@@ -207,6 +222,7 @@ class DocumentController extends Controller {
     }
 
     public function destroy($documentId) {
+        throw new Exception('Not implemented');
         $document = Document::findOrFail($documentId);
         $document->delete();
 
@@ -214,7 +230,7 @@ class DocumentController extends Controller {
     }
 
     private static function isImage($file) {
-        return in_array($file->getClientOriginalExtension(), ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg']);
+        return in_array($file->getClientOriginalExtension(), ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp', 'avif']);
     }
 
     private static function isPDF($file) {

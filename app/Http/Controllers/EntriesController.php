@@ -198,7 +198,18 @@ class EntriesController extends Controller {
 
     public function delete($id) {
         $entry = Entry::findOrFail($id);
+
+        // create copy of original entry
+        $history_entry = Entry::create(array_merge($entry->toArray(), ['id' => null]));
+        // and delete it (keeping it as history)
+        $history_entry->delete();
+        Log::debug('Created and soft deleted history entry', ['id' => $history_entry->id]);
+
+        $entry->update(['entry_id' => $history_entry->id, 'user_id_last_modified' => Auth::id()]);
         $entry->delete();
+        Log::info('Entry deleted', ['id' => $id]);
+
+        //TODO: documents also deleted?
 
         return response()->json(null, 204);
     }
