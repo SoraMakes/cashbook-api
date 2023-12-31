@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller {
     public function login(Request $request) {
@@ -34,5 +35,10 @@ class AuthController extends Controller {
         $request->user()->token()->revoke();
 
         return response()->json(['message' => 'Successfully logged out'], 200);
+    }
+
+    public function validateToken(Request $request) {
+        Log::debug('Validating token');
+        return response()->json(['message' => 'Token is valid'], 200);
     }
 }

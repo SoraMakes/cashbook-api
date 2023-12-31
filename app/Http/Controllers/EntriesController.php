@@ -209,8 +209,6 @@ class EntriesController extends Controller {
         $entry->delete();
         Log::info('Entry deleted', ['id' => $id]);
 
-        //TODO: documents also deleted?
-
         return response()->json(null, 204);
     }
 }

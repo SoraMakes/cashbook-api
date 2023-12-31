@@ -4,22 +4,18 @@ services:
   db:
     image: mariadb
     restart: unless-stopped
-    ports:
-      - "3308:3306"  # todo remove
     environment:
       MARIADB_ROOT_PASSWORD: example
       MARIADB_DATABASE: cashbook
       MARIADB_USER: cashbook
       MARIADB_PASSWORD: secret
-
-
     networks:
       - app-network
     volumes:
       - db_data:/var/lib/mysql
 
   api:
-    image: ghcr.io/glutamat42/cashbook-api:1.0.0-rc.2
+    image: ghcr.io/glutamat42/cashbook-api:1.0.0
     restart: unless-stopped
     environment:
       APP_KEY: cca02837aa6277b9aad3bc0accc2f3cf
@@ -39,7 +35,7 @@ services:
       - db
 
   webapp:
-    image: ghcr.io/glutamat42/cashbook-app:1.0.0-rc.3
+    image: ghcr.io/glutamat42/cashbook-app:1.0.0
     restart: unless-stopped
     ports:
       - "8098:80"

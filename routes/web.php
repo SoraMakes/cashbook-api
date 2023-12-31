@@ -53,7 +53,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 //        $router->get('export', 'ExportController@exportCSV');
 //        $router->post('import', 'ImportController@importCSV');
 
-        // Logout Route
+        // Auth Routes
+        $router->get('token/validate', 'AuthController@validateToken');
 //        $router->post('logout', 'AuthController@logout');  // not possible with api token authentication
     });
 });
