@@ -62,9 +62,11 @@ class DocumentController extends Controller {
                 $files = [$files];
             }
             foreach ($files as $file) {
+                Log::debug('Processing file', ['file' => $file->getClientOriginalName()]);
                 $documents = array_merge($documents, self::processFile($file, $entryId)); // process each file
             }
         } catch (Exception $e) {
+            Log::warning('Something went wrong while processing the files, cleaning up.', ['files' => $files]);
             // Delete any files that were saved before the error occurred
             foreach ($documents as $document) {
                 Storage::delete($document['file_path']);
@@ -80,14 +82,17 @@ class DocumentController extends Controller {
     private static function processFile($file, $entryId) {
         // create thumbnails folder if it doesn't exist
         if (!file_exists(storage_path() . '/app/thumbnails')) {
+            Log::debug('Creating thumbnails folder for entry', ['entry_id' => $entryId]);
             mkdir(storage_path() . '/app/thumbnails');
         }
         // create thumbnails folder if it doesn't exist
         if (!file_exists(storage_path() . '/app/originals')) {
+            Log::debug('Creating originals folder for entry', ['entry_id' => $entryId]);
             mkdir(storage_path() . '/app/originals');
         }
         // create thumbnails folder if it doesn't exist
         if (!file_exists(storage_path() . '/app/documents')) {
+            Log::debug('Creating documents folder for entry', ['entry_id' => $entryId]);
             mkdir(storage_path() . '/app/documents');
         }
 
@@ -98,6 +103,7 @@ class DocumentController extends Controller {
 
 
         if (self::isPDF($file)) {
+            Log::info('Processing PDF', ['file' => $file->getClientOriginalName()]);
             $pdf = new Pdf($file);
 
             // PDFs can have multiple pages, storing every page as a separate image
@@ -110,18 +116,20 @@ class DocumentController extends Controller {
                 unlink($tmp_file);
             }
         } elseif (self::isImage($file)) {
+            Log::info('Processing image', ['file' => $file->getClientOriginalName()]);
             $inputImage[] = ImageManager::imagick()->read($file);
         } else {
-            Log::debug('File type not supported', ['file' => $file]);
+            Log::warning('File type not supported', ['file' => $file]);
             return response()->json(['message' => 'File type not supported'], 400);
         }
 
-        $extension = 'webp'; // Define the extension
+        $extension = 'avif'; // Define the extension for the converted images
         $filenameWithoutExtension = pathinfo($filename_hash, PATHINFO_FILENAME);
         $convertImageFilename = $filenameWithoutExtension . '.' . $extension;
 
         $savedDocuments = [];
 
+        Log::debug('Start thumbnail and document conversion');
         foreach ($inputImage as $page) {
             $thumbnail = clone $page;
             $document = $page;
@@ -134,12 +142,12 @@ class DocumentController extends Controller {
             $document->scaleDown(1920, 1920);
 
             $thumbnailPath = 'thumbnails/' . $convertImageFilename;
-            $thumbnail->toWebp(50)->save(storage_path() . '/app/' . $thumbnailPath);
+            $thumbnail->toAvif(50)->save(storage_path() . '/app/' . $thumbnailPath);
 
             $documentPath = 'documents/' . $convertImageFilename;
-            $document->toWebp(50)->save(storage_path() . '/app/' . $documentPath);
+            $document->toAvif(50)->save(storage_path() . '/app/' . $documentPath);
 
-
+            Log::debug('Finished thumbnail and document conversion, saving to database');
             $document = Document::create([
                 'user_id' => Auth::id(),
                 'entry_id' => $entryId,
