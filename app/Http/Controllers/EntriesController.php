@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
-// TODO: on request timeout: some images are kept -> error handling not working as expected
+
 
 class EntriesController extends Controller {
     public function index() {
@@ -29,6 +29,9 @@ class EntriesController extends Controller {
      * @throws Exception
      */
     public function store(Request $request) {
+        ignore_user_abort(true); // ignore user aborts so the request can finish even if the user aborts the request (eg request timeout)
+        Log::debug('Called store entry', ['request' => $request->all()]);
+
         // Validate the request
         $validator = Validator::make($request->all(), [
             'category_id' => 'required|integer|exists:categories,id',
@@ -87,6 +90,7 @@ class EntriesController extends Controller {
      * @throws Exception
      */
     public function update($id, Request $request) {
+        ignore_user_abort(true); // ignore user aborts so the request can finish even if the user aborts the request (eg request timeout)
         Log::debug('Called update entry', ['id' => $id, 'request' => $request->all()]);
 
         $request['id'] = $id;

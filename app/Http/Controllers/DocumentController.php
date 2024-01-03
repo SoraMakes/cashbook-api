@@ -65,11 +65,17 @@ class DocumentController extends Controller {
                 Log::debug('Processing file', ['file' => $file->getClientOriginalName()]);
                 $documents = array_merge($documents, self::processFile($file, $entryId)); // process each file
             }
+
+            if (connection_aborted()) {
+                Log::warning('Connection aborted while processing the files, cleaning up.', ['files' => $files]);
+                throw new Exception('Connection aborted');
+            }
         } catch (Exception $e) {
             Log::warning('Something went wrong while processing the files, cleaning up.', ['files' => $files]);
             // Delete any files that were saved before the error occurred
             foreach ($documents as $document) {
                 Storage::delete($document['file_path']);
+                Storage::delete($document['original_path']);
                 Storage::delete($document['thumbnail_path']);
             }
 
