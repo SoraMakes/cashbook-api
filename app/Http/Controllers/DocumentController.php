@@ -133,12 +133,16 @@ class DocumentController extends Controller {
         foreach ($inputImage as $page) {
             $thumbnail = clone $page;
             $document = $page;
-            // Create and store thumbnail for images; if original file was pdf: it is image now
+            // Create thumbnail for images; if original file was pdf: it is image now
             if ($document->width() > $document->height()) {
-                $thumbnail->scaleDown(null, 128);
+                $thumbnail->scaleDown(null, 100);
             } else {
-                $thumbnail->scaleDown(128);
+                $thumbnail->scaleDown(100);
             }
+            // crop thumbnail to 100x100
+            $thumbnail->crop(100, 100, $thumbnail->width() / 2 - 50, $thumbnail->height() / 2 - 50);
+
+            // scale down document max width/height of 1920px
             $document->scaleDown(1920, 1920);
 
             $thumbnailPath = 'thumbnails/' . $convertImageFilename;
