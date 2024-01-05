@@ -1,27 +1,28 @@
-# Use Alpine-based PHP 8.1 image
-FROM php:8.1-fpm-alpine
+# Use Debian-based PHP 8.3 image
+FROM php:8.3-fpm-bookworm
 
 # default values for env variables
 ENV PHP_UPLOAD_MAX_FILESIZE=${PHP_UPLOAD_MAX_FILESIZE:-"100M"}
 ENV PHP_POST_MAX_SIZE=${PHP_POST_MAX_SIZE:-"100M"}
 
+# Set frontend to noninteractive to skip any interactive post-install configuration steps
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies including ImageMagick, Ghostscript, and ICU libraries
-RUN apk add --no-cache nginx imagemagick ghostscript icu-dev mysql-client
+RUN apt-get update && apt-get install -y --no-install-recommends nginx imagemagick ghostscript libicu-dev mariadb-client unzip
 
 # Install PHP extensions required for Laravel/Lumen
-RUN docker-php-ext-install pdo pdo_mysql
-RUN apk add --no-cache icu-libs && docker-php-ext-install intl
+RUN docker-php-ext-install pdo pdo_mysql && apt-get install -y --no-install-recommends libicu-dev && docker-php-ext-install intl
 
 # Install the build dependencies and Imagick
-RUN apk add --no-cache imagemagick-dev autoconf g++ make \
-    && pecl install imagick \
+RUN apt-get install -y --no-install-recommends libmagickwand-dev autoconf g++ make \
+    && printf "\n" | pecl install imagick \
     && docker-php-ext-enable imagick \
-    && apk del autoconf g++ make # Clean up unnecessary packages after installation
+    && apt-get remove -y autoconf g++ make && apt-get autoremove -y && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy your application code to the container
 COPY --chown=www-data . /var/www/html
-
 
 # Copy the default environment file
 RUN mv /var/www/html/.env.default /var/www/html/.env
@@ -33,7 +34,7 @@ RUN chown -R www-data:www-data /var/www/html/storage
 WORKDIR /var/www/html
 
 # Update ImageMagick policy for handling PDFs
-RUN sed -i '/<policy domain="coder" rights="none" pattern="PDF" \/>/c\<policy domain="coder" rights="read|write" pattern="PDF" \/>' /etc/ImageMagick-7/policy.xml
+RUN sed -i '/<policy domain="coder" rights="none" pattern="PDF" \/>/c\<policy domain="coder" rights="read|write" pattern="PDF" \/>' /etc/ImageMagick-6/policy.xml
 
 # Copy your Nginx configuration file
 COPY nginx.conf /etc/nginx/nginx.conf

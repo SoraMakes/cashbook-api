@@ -6,12 +6,10 @@ use App\Models\Document;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Intervention\Image\ImageManager;
 use Spatie\PdfToImage\Pdf;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
@@ -26,11 +24,11 @@ class DocumentController extends Controller {
             'entry_id' => 'required|exists:entries,id', // entry must exist in the database
         ]);
 
-        $validator->sometimes('document', 'file|mimes:avif,webp,jpg,jpeg,png,pdf|max:4096', function ($input) {
+        $validator->sometimes('document', 'file|mimes:avif,webp,jpg,jpeg,png,pdf|max:10240', function ($input) {
             return !is_array($input->document);
         });
 
-        $validator->sometimes('document.*', 'file|mimes:avif,webp,jpg,jpeg,png,pdf|max:4096', function ($input) {
+        $validator->sometimes('document.*', 'file|mimes:avif,webp,jpg,jpeg,png,pdf|max:10240', function ($input) {
             return is_array($input->document);
         });
 
@@ -115,6 +113,8 @@ class DocumentController extends Controller {
             // PDFs can have multiple pages, storing every page as a separate image
             for ($i = 1; $i <= $pdf->getNumberOfPages(); $i++) {
                 $pdf->setPage($i);
+                $pdf->setResolution(300);
+
                 // save to temparary file
                 $tmp_file = tempnam(sys_get_temp_dir(), 'jpg');
                 $pdf->saveImage($tmp_file);
@@ -123,7 +123,12 @@ class DocumentController extends Controller {
             }
         } elseif (self::isImage($file)) {
             Log::info('Processing image', ['file' => $file->getClientOriginalName()]);
-            $inputImage[] = ImageManager::imagick()->read($file);
+            try {
+                $inputImage[] = ImageManager::imagick()->read($file);
+            } catch (Exception $e) {
+                Log::warning('Failed to open file', ['file' => $file->getClientOriginalName(), 'error' => $e->getMessage()]);
+                throw $e;
+            }
         } else {
             Log::warning('File type not supported', ['file' => $file]);
             return response()->json(['message' => 'File type not supported'], 400);
@@ -136,7 +141,10 @@ class DocumentController extends Controller {
         $savedDocuments = [];
 
         Log::debug('Start thumbnail and document conversion');
-        foreach ($inputImage as $page) {
+        for ($i = 0; $i < count($inputImage); $i++) {
+            $page = $inputImage[$i];
+            $convertImageFilename = $i . '_' . $convertImageFilename;
+
             $thumbnail = clone $page;
             $document = $page;
             // Create thumbnail for images; if original file was pdf: it is image now
@@ -149,13 +157,13 @@ class DocumentController extends Controller {
             $thumbnail->crop(100, 100, $thumbnail->width() / 2 - 50, $thumbnail->height() / 2 - 50);
 
             // scale down document max width/height of 1920px
-            $document->scaleDown(1920, 1920);
+            $document->scaleDown(2560, 2560);
 
             $thumbnailPath = 'thumbnails/' . $convertImageFilename;
             $thumbnail->toAvif(50)->save(storage_path() . '/app/' . $thumbnailPath);
 
             $documentPath = 'documents/' . $convertImageFilename;
-            $document->toAvif(50)->save(storage_path() . '/app/' . $documentPath);
+            $document->toAvif(42)->save(storage_path() . '/app/' . $documentPath);
 
             Log::debug('Finished thumbnail and document conversion, saving to database');
             $document = Document::create([
@@ -195,11 +203,17 @@ class DocumentController extends Controller {
     }
 
     public function thumbnail($documentId) {
+        Log::debug('Loading thumbnail', ['document_id' => $documentId]);
         return $this->load_and_return_file($documentId, 'thumbnail');
     }
 
     private function load_and_return_file($documentId, $type) {
-        $document = Document::findOrFail($documentId);
+        try {
+            $document = Document::findOrFail($documentId);
+        } catch (Exception $e) {
+            Log::info('Document not found', ['document_id' => $documentId]);
+            return response('File not found', 404);
+        }
 
         if ($document->thumbnail_path) {
             switch ($type) {
@@ -217,13 +231,16 @@ class DocumentController extends Controller {
             }
 
             if (file_exists($path)) {
+                Log::debug('File found', ['path' => $path]);
                 $type = mime_content_type($path);
 
                 return response()->download($path, $document->original_filename, ['Content-Type' => $type]);
+            } else {
+                Log::info('File not found', ['path' => $path]);
             }
         }
 
-        return response('Thumbnail not found', 404);
+        return response($type . ' not found', 404);
     }
 
     public function index() {

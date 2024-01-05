@@ -1,0 +1,7 @@
+/storage/app/*
+/storage/logs/*
+/vendor
+/.env
+/.scribe
+/.github
+/.git
