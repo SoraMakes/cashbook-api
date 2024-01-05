@@ -4,6 +4,9 @@
 echo upload_max_filesize=$PHP_UPLOAD_MAX_FILESIZE > /usr/local/etc/php/conf.d/uploads.ini
 echo post_max_size=$PHP_POST_MAX_SIZE >> /usr/local/etc/php/conf.d/uploads.ini
 
+# ensure storage folder is writable. Owner and group ids are wrong after update from alpine image
+chown -R www-data:www-data /var/www/html/storage
+
 # wait for db to start
 # setup variables
 set -a
