@@ -52,6 +52,7 @@ class Entry extends Model {
         'is_income' => 'boolean',
         'no_invoice' => 'boolean',
         'category_id' => 'integer',
+        'amount' => 'integer',
     ];
 
     /**
