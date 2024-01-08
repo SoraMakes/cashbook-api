@@ -28,6 +28,7 @@ class Entry extends Model {
         });
     }
 
+    protected $hidden = ['deleted_at', 'entry_id'];
 
     /**
      * The attributes that are mass assignable.
