@@ -1,25 +1,26 @@
 # Use Debian-based PHP 8.3 image
 FROM php:8.3-fpm-bookworm
 
-# default values for env variables
+# Default values for environment variables
 ENV PHP_UPLOAD_MAX_FILESIZE=${PHP_UPLOAD_MAX_FILESIZE:-"100M"}
 ENV PHP_POST_MAX_SIZE=${PHP_POST_MAX_SIZE:-"100M"}
 
 # Set frontend to noninteractive to skip any interactive post-install configuration steps
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies including ImageMagick, Ghostscript, and ICU libraries
-RUN apt-get update && apt-get install -y --no-install-recommends nginx imagemagick ghostscript libicu-dev mariadb-client unzip
+# Install system dependencies including ImageMagick, Ghostscript, and ICU libraries, build libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nginx imagemagick ghostscript libicu-dev mariadb-client unzip \
+    libzip-dev libxml2-dev libonig-dev libmagickwand-dev autoconf g++ make
 
 # Install PHP extensions required for Laravel/Lumen
-RUN docker-php-ext-install pdo pdo_mysql && apt-get install -y --no-install-recommends libicu-dev && docker-php-ext-install intl
+RUN docker-php-ext-install pdo pdo_mysql intl zip dom mbstring
 
 # Install the build dependencies and Imagick
-RUN apt-get install -y --no-install-recommends libmagickwand-dev autoconf g++ make \
-    && printf "\n" | pecl install imagick \
-    && docker-php-ext-enable imagick \
-    && apt-get remove -y autoconf g++ make && apt-get autoremove -y && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN pecl install imagick && docker-php-ext-enable imagick
+
+# Clean up
+RUN apt-get remove -y autoconf g++ make && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy your application code to the container
 COPY --chown=www-data . /var/www/html

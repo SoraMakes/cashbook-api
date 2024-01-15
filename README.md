@@ -19,6 +19,7 @@ upload_max_filesize and post_max_size  min 10MB
 
 requires imagemagick and ghostscript
 
+iconv, dom: seems at least one of these is required for league/csv
 
 Edit the Imagick Policy File:
 
@@ -40,3 +41,7 @@ xml
 ---
 
 create user: docker exec api php /var/www/html/artisan user:create <username> <password> <token>
+
+data export: php artisan export:data --exportDocuments --convertToJpeg
+
+
