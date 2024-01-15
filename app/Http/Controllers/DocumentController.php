@@ -86,17 +86,17 @@ class DocumentController extends Controller {
     private static function processFile($file, $entryId) {
         // create thumbnails folder if it doesn't exist
         if (!file_exists(storage_path() . '/app/thumbnails')) {
-            Log::debug('Creating thumbnails folder for entry', ['entry_id' => $entryId]);
+            Log::debug('Creating thumbnails folder');
             mkdir(storage_path() . '/app/thumbnails');
         }
         // create thumbnails folder if it doesn't exist
         if (!file_exists(storage_path() . '/app/originals')) {
-            Log::debug('Creating originals folder for entry', ['entry_id' => $entryId]);
+            Log::debug('Creating originals folder');
             mkdir(storage_path() . '/app/originals');
         }
         // create thumbnails folder if it doesn't exist
         if (!file_exists(storage_path() . '/app/documents')) {
-            Log::debug('Creating documents folder for entry', ['entry_id' => $entryId]);
+            Log::debug('Creating documents folder');
             mkdir(storage_path() . '/app/documents');
         }
 
