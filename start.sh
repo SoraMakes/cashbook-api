@@ -27,5 +27,8 @@ su www-data -s /bin/sh -c "php /var/www/html/artisan scribe:generate"
 # Start PHP-FPM in the background
 php-fpm &
 
+# start queue worker
+su www-data -s /bin/sh -c "php /var/www/html/artisan queue:work --tries=3 --timeout=600"
+
 # Start Nginx in the foreground
 exec nginx -g 'daemon off;'

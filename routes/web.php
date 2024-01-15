@@ -50,6 +50,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 //        $router->delete('documents/{documentId}', 'DocumentController@destroy');
 
         // CSV Export/Import Routes
+        $router->post('export/create', 'ExportController@createExport');
+//        $router->get('export', 'ExportController@index');
+//        $router->get('export/{id}', 'ExportController@downloadExport');
 //        $router->get('export', 'ExportController@exportCSV');
 //        $router->post('import', 'ImportController@importCSV');
 

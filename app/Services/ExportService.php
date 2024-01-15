@@ -84,7 +84,7 @@ class ExportService {
             }
         }
 
-        return $block_date . $block_documents . time() . '.zip';
+        return $block_date . '_export_' . $block_documents . time() . '.zip';
     }
 
     private function cleanupExports(): void {
