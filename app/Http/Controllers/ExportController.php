@@ -44,7 +44,7 @@ class ExportController extends Controller {
         $exports = [];
 
         foreach ($files as $file) {
-            if (preg_match('/^\d{4}-\d{2}-\d{2}_export_(documents_jpeg_|documents_)\d+\.zip$/', basename($file))) {
+            if (preg_match('/^\d{4}-\d{2}-\d{2}_export_(documents_jpeg_|documents_)?\d+\.(zip|tar\.gz)$/', basename($file))) {
                 $export = $this->parseFileInfo($file);
                 $export['download_parameter'] = self::createTemporaryDownloadParameter($export['filename']);
                 $exports[] = $export;
@@ -66,15 +66,17 @@ class ExportController extends Controller {
         $filename = basename($file);
         $filesize = Storage::disk('local')->size($file);
         $timestamp = Storage::disk('local')->lastModified($file);
-        $containsDocuments = strpos($filename, 'documents_') !== false;
-        $convertedToJpeg = strpos($filename, 'documents_jpeg_') !== false;
+        $containsDocuments = str_contains($filename, 'documents_');
+        $convertedToJpeg = str_contains($filename, 'documents_jpeg_');
+        $archiveFormat = str_contains($filename, '.zip') ? 'zip' : 'tar.gz';
 
         return [
             'filename' => $filename,
             'filesize' => $filesize,
             'created_timestamp' => date('Y-m-d H:i:s', $timestamp),
             'contains_documents' => $containsDocuments,
-            'images_converted_to_jpeg' => $convertedToJpeg
+            'images_converted_to_jpeg' => $convertedToJpeg,
+            'archive_format' => $archiveFormat
         ];
     }
 

@@ -42,6 +42,6 @@ xml
 
 create user: docker exec api php /var/www/html/artisan user:create <username> <password> <token>
 
-data export: php artisan export:data --exportDocuments --convertToJpeg
+data export: php artisan export:data --exportDocuments --convertToJpeg --exportFormat=tar.gz
 
 

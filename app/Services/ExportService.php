@@ -6,13 +6,15 @@ use App\Models\Entry;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use League\Csv\Writer;
+use Phar;
+use PharData;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ZipArchive;
 use Intervention\Image\ImageManager;
 
 class ExportService {
-    public function exportData(bool $exportDocuments, bool $convertToJpeg): string {
+    public function exportData(bool $exportDocuments, bool $convertToJpeg, string $exportFormat = 'zip'): string {
         // create exports folder if it doesn't exist
         if (!file_exists(storage_path() . '/app/exports')) {
             Log::debug('Creating exports folder');
@@ -44,21 +46,14 @@ class ExportService {
             }
         }
 
-        // Create ZIP file
-        $zipPath = storage_path('app/exports/' . $this->generateZipFilename($exportDocuments, $convertToJpeg));
-        $zip = new ZipArchive();
-        $zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        // Determine the export file path based on the format
+        $exportFilePath = storage_path('app/exports/' . $this->generateExportFilename($exportDocuments, $convertToJpeg, $exportFormat));
 
-        // Add CSV to ZIP
-        $zip->addFile($csvPath, 'export.csv');
-
-        // Add documents to ZIP if exported
-        if ($exportDocuments) {
-            // Add exported documents to the ZIP
-            $this->addDocumentsToZip($zip);
+        if ($exportFormat == 'zip') {
+            $this->createZip($exportFilePath, $csvPath, $exportDocuments);
+        } elseif ($exportFormat == 'tar.gz') {
+            $this->createTarGz($exportFilePath, $csvPath, $exportDocuments);
         }
-
-        $zip->close();
 
         // Clean up temporary CSV and documents
         unlink($csvPath);
@@ -70,10 +65,10 @@ class ExportService {
         $this->cleanupExports();
 
         // Return ZIP path
-        return $zipPath;
+        return $exportFilePath;
     }
 
-    private function generateZipFilename($exportDocuments, $convertToJpeg): string {
+    private function generateExportFilename($exportDocuments, $convertToJpeg, $exportFormat): string {
         $block_date = date('Y-m-d');
         $block_documents = "";
         if ($exportDocuments) {
@@ -83,8 +78,52 @@ class ExportService {
                 $block_documents = "documents_";
             }
         }
+        return $block_date . '_export_' . $block_documents . time() . '.' . ($exportFormat == 'tar.gz' ? 'tar.gz' : 'zip');
+    }
 
-        return $block_date . '_export_' . $block_documents . time() . '.zip';
+    private function createZip($zipPath, $csvPath, $exportDocuments) {
+        $zip = new ZipArchive();
+        $zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        // Add CSV to ZIP
+        $zip->addFile($csvPath, 'export.csv');
+
+        // Add documents to ZIP if exported
+        if ($exportDocuments) {
+            $this->addDocumentsToZip($zip);
+        }
+
+        $zip->close();
+    }
+
+    private function createTarGz($tarGzPath, $csvPath, $exportDocuments) {
+        $tar = new PharData(str_replace('.gz', '', $tarGzPath));
+        $tar->addFile($csvPath, 'export.csv');
+
+        // Add documents to TAR.GZ if exported
+        if ($exportDocuments) {
+            $this->addDocumentsToTarGz($tar);
+        }
+
+        $tar->compress(Phar::GZ);
+        unset($tar);
+        // Remove TAR file after compressing it to TAR.GZ
+        unlink(str_replace('.gz', '', $tarGzPath));
+    }
+
+    private function addDocumentsToTarGz($tar) {
+        $files = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator(storage_path('app/exports/documents'))
+        );
+
+        foreach ($files as $name => $file) {
+            if (!$file->isDir()) {
+                $filePath = $file->getRealPath();
+                $relativePath = substr($filePath, strlen(storage_path('app/exports/')));
+
+                $tar->addFile($filePath, $relativePath);
+            }
+        }
+
     }
 
     private function cleanupExports(): void {
@@ -126,8 +165,7 @@ class ExportService {
         ];
     }
 
-    private function exportDocuments($entry, $convertToJpeg): void
-    {
+    private function exportDocuments($entry, $convertToJpeg): void {
         foreach ($entry->documents as $document) {
             $originalPath = storage_path('app/' . $document->original_path);
             if (file_exists($originalPath)) {
@@ -157,8 +195,7 @@ class ExportService {
         }
     }
 
-    private function isUncommonImageFormat($filePath): bool
-    {
+    private function isUncommonImageFormat($filePath): bool {
         $imageExtensions = ['bmp', 'svg', 'webp', 'avif'];
         return in_array(strtolower(pathinfo($filePath, PATHINFO_EXTENSION)), $imageExtensions);
     }
