@@ -21,6 +21,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     // Authentication Routes
     $router->post('login', 'AuthController@login');
 
+    // Public Routes
+    $router->get('export/download', 'ExportController@downloadExport');  // protected by time based signature
+
     // Protected Routes
     $router->group(['middleware' => 'auth'], function () use ($router) {
         // Entries Routes
@@ -51,8 +54,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
         // CSV Export/Import Routes
         $router->post('export/create', 'ExportController@createExport');
-//        $router->get('export', 'ExportController@index');
-//        $router->get('export/{id}', 'ExportController@downloadExport');
+        $router->get('export', 'ExportController@index');
 //        $router->get('export', 'ExportController@exportCSV');
 //        $router->post('import', 'ImportController@importCSV');
 

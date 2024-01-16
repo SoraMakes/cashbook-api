@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Jobs\ExportJob;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 class ExportController extends Controller {
     public function createExport(Request $request) {
@@ -30,10 +32,80 @@ class ExportController extends Controller {
         ]);
         Queue::push(new ExportJob(
             $exportDocuments,
-             $convertToJpeg
+            $convertToJpeg
         ));
         Log::debug('Export job dispatched');
 
         return response()->json(['message' => 'Export started']);
+    }
+
+    public function index(Request $request) {
+        $files = Storage::disk('local')->files('exports');
+        $exports = [];
+
+        foreach ($files as $file) {
+            if (preg_match('/^\d{4}-\d{2}-\d{2}_export_(documents_jpeg_|documents_)\d+\.zip$/', basename($file))) {
+                $export = $this->parseFileInfo($file);
+                $export['download_parameter'] = self::createTemporaryDownloadParameter($export['filename']);
+                $exports[] = $export;
+            }
+        }
+
+        return response()->json($exports);
+    }
+
+    public static function createTemporaryDownloadParameter($filename): string {
+        // workaround for lumen not being able to generate signed URLs
+        $expiresAt = Carbon::now()->addHours(6)->timestamp;
+        $signature = hash_hmac('sha256', $filename . $expiresAt, env('APP_KEY'));
+
+        return "name=" . urlencode($filename) . "&expires=" . $expiresAt . "&signature=" . $signature;
+    }
+
+    private function parseFileInfo($file) {
+        $filename = basename($file);
+        $filesize = Storage::disk('local')->size($file);
+        $timestamp = Storage::disk('local')->lastModified($file);
+        $containsDocuments = strpos($filename, 'documents_') !== false;
+        $convertedToJpeg = strpos($filename, 'documents_jpeg_') !== false;
+
+        return [
+            'filename' => $filename,
+            'filesize' => $filesize,
+            'created_timestamp' => date('Y-m-d H:i:s', $timestamp),
+            'contains_documents' => $containsDocuments,
+            'images_converted_to_jpeg' => $convertedToJpeg
+        ];
+    }
+
+    public function downloadExport(Request $request) {
+        $name = $request->input('name');
+        $expires = $request->input('expires');
+        $signature = $request->input('signature');
+
+        Log::info('Downloading export', ['name' => $name]);
+
+        if ($this->isValidToken($name, $expires, $signature)) {
+            $filePath = Storage::disk('local')->path('exports/' . $name);
+
+            return response()->stream(function () use ($filePath) {
+                $stream = fopen($filePath, 'r');
+                fpassthru($stream);
+                fclose($stream);
+            }, 200, [
+                "Content-Type" => "application/zip",
+                "Content-Disposition" => "attachment; filename=\"" . basename($filePath) . "\""
+            ]);
+        } else {
+            return response()->json(['error' => 'Invalid or expired link'], 401);
+        }
+    }
+
+    private function isValidToken($filename, $expires, $signature) {
+        $expected = hash_hmac('sha256', $filename . $expires, env('APP_KEY'));
+        if ($expected === $signature && Carbon::now()->timestamp <= $expires) {
+            return true;
+        }
+        return false;
     }
 }

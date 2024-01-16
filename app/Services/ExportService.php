@@ -96,9 +96,13 @@ class ExportService {
             return filectime($b) - filectime($a);
         });
 
-        // Keep files of the last 7 days, maximum 10 files
+        // Get limit values from environment, or use defaults
+        $maxFiles = env('EXPORT_MAX_FILES', 10);
+        $maxDays = env('EXPORT_MAX_DAYS', 7);
+
+        // Keep files of the last $maxDays days, maximum $maxFiles files
         foreach ($allExports as $index => $exportFile) {
-            if ($index >= 10 || filectime($exportFile) < strtotime('-7 days')) {
+            if ($index >= $maxFiles || filectime($exportFile) < strtotime("-{$maxDays} days")) {
                 unlink($exportFile);
             }
         }
