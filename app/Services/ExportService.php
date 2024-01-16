@@ -127,8 +127,9 @@ class ExportService {
     }
 
     private function cleanupExports(): void {
+        Log::debug('Cleaning up exports');
         $exportsPath = storage_path('app/exports');
-        $allExports = glob($exportsPath . '/*.zip');
+        $allExports = glob($exportsPath . '/*');
 
         // Sort files by creation time
         usort($allExports, function ($a, $b) {
@@ -142,6 +143,7 @@ class ExportService {
         // Keep files of the last $maxDays days, maximum $maxFiles files
         foreach ($allExports as $index => $exportFile) {
             if ($index >= $maxFiles || filectime($exportFile) < strtotime("-{$maxDays} days")) {
+                Log::debug('Deleting export ' . $exportFile);
                 unlink($exportFile);
             }
         }
