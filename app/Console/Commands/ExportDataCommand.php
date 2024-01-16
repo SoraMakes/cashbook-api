@@ -8,7 +8,11 @@ use Illuminate\Console\Command;
 
 
 class ExportDataCommand extends Command {
-    protected $signature = 'export:data {--exportDocuments} {--convertToJpeg} {--returnDownloadLink}';
+    protected $signature = 'export:data
+                            {--exportDocuments}
+                            {--convertToJpeg}
+                            {--returnDownloadLink : Return a temporary download link instead of the file path}
+                            {--exportFormat=zip : The format of the export file (zip or tar.gz)}';
     protected $description = 'Export data to CSV and optionally images.';
 
     public function handle() {
@@ -16,8 +20,9 @@ class ExportDataCommand extends Command {
         $exportDocuments = $this->option('exportDocuments');
         $convertToJpeg = $this->option('convertToJpeg');
         $returnDownloadLink = $this->option('returnDownloadLink');
+        $exportFormat = $this->option('exportFormat');
 
-        $exportPath = $exportService->exportData($exportDocuments, $convertToJpeg);
+        $exportPath = $exportService->exportData($exportDocuments, $convertToJpeg, $exportFormat);
 
         if ($returnDownloadLink) {
             $downloadParameters = ExportController::createTemporaryDownloadParameter(basename($exportPath));
