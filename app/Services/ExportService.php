@@ -24,13 +24,27 @@ class ExportService {
         // Create a CSV Writer instance
         $csvPath = storage_path('app/exports/temp.csv');
         $csv = Writer::createFromPath($csvPath, 'w+');
+        // Set UTF-8 encoding with BOM
+        $csv->setOutputBOM(Writer::BOM_UTF8);
+        // Set delimiter to comma or semicolon based on your needs
+        $csv->setDelimiter(';');
 
         // Add CSV headers
         $csv->insertOne([
-            'Entry ID', 'Category Name', 'Amount', 'Recipient/Sender',
-            'Payment Method', 'Description', 'No Invoice', 'Date',
-            'Created At', 'Username Created', 'Updated At', 'Username Updated',
-            'Attached Document Count'
+            'Date',
+            'Recipient/Sender',
+            'Description',
+            'Amount',
+            'Category Name',
+            'is income',
+            'Payment Method',
+            'No Invoice',
+            'Attached Document Count',
+            'Entry ID',
+            'Created At',
+            'Username Created',
+            'Updated At',
+            'Username Updated',
         ]);
 
         // Fetch entries with related models
@@ -67,6 +81,26 @@ class ExportService {
         // Return ZIP path
         return $exportFilePath;
     }
+
+    private function formatEntryForCsv($entry): array {
+        return [
+            $entry->date,
+            $entry->recipient_sender,
+            $entry->description,
+            $entry->amount == null ? ($entry->is_income ? $entry->amount : -$entry->amount) : '',
+            $entry->category ? $entry->category->name : '',
+            $entry->is_income,
+            $entry->payment_method,
+            $entry->no_invoice ? 'Yes' : 'No',
+            $entry->documents->count(),
+            $entry->id,
+            $entry->created_at->toDateTimeString(),
+            $entry->user ? $entry->user->username : '',
+            $entry->updated_at->toDateTimeString(),
+            $entry->user_last_modified ? $entry->user_last_modified->username : '',
+        ];
+    }
+
 
     private function generateExportFilename($exportDocuments, $convertToJpeg, $exportFormat): string {
         $block_date = date('Y-m-d');
@@ -147,24 +181,6 @@ class ExportService {
                 unlink($exportFile);
             }
         }
-    }
-
-    private function formatEntryForCsv($entry): array {
-        return [
-            $entry->id,
-            $entry->category ? $entry->category->name : '',
-            $entry->is_income ? $entry->amount : -$entry->amount,
-            $entry->recipient_sender,
-            $entry->payment_method,
-            $entry->description,
-            $entry->no_invoice ? 'Yes' : 'No',
-            $entry->date,
-            $entry->created_at->toDateTimeString(),
-            $entry->user ? $entry->user->username : '',
-            $entry->updated_at->toDateTimeString(),
-            $entry->user_last_modified ? $entry->user_last_modified->username : '',
-            $entry->documents->count()
-        ];
     }
 
     private function exportDocuments($entry, $convertToJpeg): void {
