@@ -5,6 +5,9 @@ FROM php:8.3-fpm-bookworm
 ENV PHP_UPLOAD_MAX_FILESIZE=${PHP_UPLOAD_MAX_FILESIZE:-"100M"}
 ENV PHP_POST_MAX_SIZE=${PHP_POST_MAX_SIZE:-"100M"}
 
+# Set this variable to the user nginx/fpm is serving the appication as
+ENV APP_USER="www-data"
+
 # Set frontend to noninteractive to skip any interactive post-install configuration steps
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -23,13 +26,13 @@ RUN pecl install imagick && docker-php-ext-enable imagick
 RUN apt-get remove -y autoconf g++ make && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy your application code to the container
-COPY --chown=www-data . /var/www/html
+COPY --chown=$APP_USER . /var/www/html
 
 # Copy the default environment file
 RUN mv /var/www/html/.env.default /var/www/html/.env
 
 # Allow the web server user to write to storage directory
-RUN chown -R www-data:www-data /var/www/html/storage
+RUN chown -R $APP_USER:$APP_USER /var/www/html/storage
 
 # Set working directory
 WORKDIR /var/www/html

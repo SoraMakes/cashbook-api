@@ -16,6 +16,11 @@ class ExportDataCommand extends Command {
     protected $description = 'Export data to CSV and optionally images.';
 
     public function handle() {
+        if (!$this->isRunningAsCorrectUser()) {
+            $this->error('Error: This command must not be run as root or any other unintended user.');
+            return 1;
+        }
+
         $exportService = new ExportService();
         $exportDocuments = $this->option('exportDocuments');
         $convertToJpeg = $this->option('convertToJpeg');
@@ -33,5 +38,13 @@ class ExportDataCommand extends Command {
             $this->info($exportPath);
             return $exportPath;
         }
+    }
+
+    private function isRunningAsCorrectUser(): bool {
+        if (env('APP_USER') == '') {
+            $this->warn('APP_USER is not set. Skipping user check.');
+            return true;
+        }
+        return posix_getpwuid(posix_geteuid())['name'] === env('APP_USER');
     }
 }

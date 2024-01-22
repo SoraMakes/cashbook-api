@@ -18,11 +18,19 @@ class ExportService {
         // create exports folder if it doesn't exist
         if (!file_exists(storage_path() . '/app/exports')) {
             Log::debug('Creating exports folder');
-            mkdir(storage_path() . '/app/exports');
+            Storage::createDirectory('/app/exports');
         }
 
+        // create temporary folder
+        if (file_exists(storage_path('app/tmp/export'))) {
+            Log::debug('Deleting old temporary folder');
+            Storage::deleteDirectory('tmp/export');
+        }
+        Log::debug('Creating temporary folder');
+        Storage::createDirectory('tmp/export/documents');
+
         // Create a CSV Writer instance
-        $csvPath = storage_path('app/exports/temp.csv');
+        $csvPath = storage_path('app/tmp/export') . '/temp.csv';
         $csv = Writer::createFromPath($csvPath, 'w+');
         // Set UTF-8 encoding with BOM
         $csv->setOutputBOM(Writer::BOM_UTF8);
@@ -61,7 +69,7 @@ class ExportService {
         }
 
         // Determine the export file path based on the format
-        $exportFilePath = storage_path('app/exports/' . $this->generateExportFilename($exportDocuments, $convertToJpeg, $exportFormat));
+        $exportFilePath = storage_path('app/exports/') . $this->generateExportFilename($exportDocuments, $convertToJpeg, $exportFormat);
 
         if ($exportFormat == 'zip') {
             $this->createZip($exportFilePath, $csvPath, $exportDocuments);
@@ -70,10 +78,7 @@ class ExportService {
         }
 
         // Clean up temporary CSV and documents
-        unlink($csvPath);
-        if ($exportDocuments) {
-            Storage::deleteDirectory('exports/documents');
-        }
+        Storage::deleteDirectory('tmp/export');
 
         // Cleanup old exports
         $this->cleanupExports();
@@ -123,41 +128,32 @@ class ExportService {
 
         // Add documents to ZIP if exported
         if ($exportDocuments) {
-            $this->addDocumentsToZip($zip);
+            $this->addDocumentsToArchive($zip);
         }
 
         $zip->close();
     }
 
     private function createTarGz($tarGzPath, $csvPath, $exportDocuments) {
-        $tar = new PharData(str_replace('.gz', '', $tarGzPath));
+        // Create a temporary .tar file path in the /tmp directory
+        $tempTarPath = '/tmp/' . basename($tarGzPath, '.gz');
+
+        $tar = new PharData($tempTarPath);
         $tar->addFile($csvPath, 'export.csv');
 
         // Add documents to TAR.GZ if exported
         if ($exportDocuments) {
-            $this->addDocumentsToTarGz($tar);
+            $this->addDocumentsToArchive($tar);
         }
 
+        // Compress .tar to .tar.gz
         $tar->compress(Phar::GZ);
-        unset($tar);
-        // Remove TAR file after compressing it to TAR.GZ
-        unlink(str_replace('.gz', '', $tarGzPath));
-    }
 
-    private function addDocumentsToTarGz($tar) {
-        $files = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator(storage_path('app/exports/documents'))
-        );
+        // Move the compressed .tar.gz file to the intended path
+        rename($tempTarPath . '.gz', $tarGzPath);
 
-        foreach ($files as $name => $file) {
-            if (!$file->isDir()) {
-                $filePath = $file->getRealPath();
-                $relativePath = substr($filePath, strlen(storage_path('app/exports/')));
-
-                $tar->addFile($filePath, $relativePath);
-            }
-        }
-
+        // Clean up: Remove the temporary .tar file
+        unlink($tempTarPath);
     }
 
     private function cleanupExports(): void {
@@ -184,25 +180,34 @@ class ExportService {
     }
 
     private function exportDocuments($entry, $convertToJpeg): void {
+        $entryFolderName = $entry->id . '_' . $entry->category->name . '_' . $entry->recipient_sender . '_' . $entry->description;
+        $entryFolderName = preg_replace('/[^A-Za-z0-9äöü_()+,.\-]/', '_', $entryFolderName);
+        $entryFolderName = substr($entryFolderName, 0, 100);
+
         foreach ($entry->documents as $document) {
-            $originalPath = storage_path('app/' . $document->original_path);
+            $originalPath = storage_path('app/') . $document->original_path;
             if (file_exists($originalPath)) {
-                $destinationPath = storage_path('app/exports/documents/' . $entry->id);
-                if (!file_exists($destinationPath)) {
-                    mkdir($destinationPath, 0755, true);
+                $destinationPathAbsolute = storage_path('app/tmp/export/documents/' . $entryFolderName);
+                $destinationPathForStorageClass = 'tmp/export/documents/' . $entryFolderName;
+                if (!file_exists($destinationPathAbsolute)) {
+                    Storage::createDirectory($destinationPathForStorageClass);
                 }
 
                 if ($convertToJpeg && $this->isUncommonImageFormat($originalPath)) {
+                    // PHP Tar only allows max 100 chars long filenames https://stackoverflow.com/a/24801016
+                    $shortenedOriginalFilename = substr(pathinfo($document->original_filename, PATHINFO_FILENAME), 0, 92);
                     // Change file extension of $destinationFile to .jpg
-                    $jpegFilename = pathinfo($document->original_filename, PATHINFO_FILENAME) . '.jpg';
-                    $destinationFile = $destinationPath . '/' . $document->id . '_' . $jpegFilename;
+                    $jpegFilename = $shortenedOriginalFilename . '.jpg';
+                    $destinationFile = $destinationPathAbsolute . '/' . $document->id . '_' . $jpegFilename;
 
 
                     // Convert image to JPEG
                     $img = ImageManager::imagick()->read($originalPath);
                     $img->toJpeg(80)->save($destinationFile);
                 } else {
-                    $destinationFile = $destinationPath . '/' . $document->id . '_' . $document->original_filename;
+                    // PHP Tar only allows max 100 chars long filenames https://stackoverflow.com/a/24801016
+                    $shortenedOriginalFilename = substr(pathinfo($document->original_filename, PATHINFO_FILENAME), 0, 92) . pathinfo($document->original_filename, PATHINFO_EXTENSION);
+                    $destinationFile = $destinationPathAbsolute . '/' . $document->id . '_' . $shortenedOriginalFilename;
 
                     // Copy original file
                     copy($originalPath, $destinationFile);
@@ -218,17 +223,26 @@ class ExportService {
         return in_array(strtolower(pathinfo($filePath, PATHINFO_EXTENSION)), $imageExtensions);
     }
 
-    private function addDocumentsToZip($zip): void {
+    /**
+     * @param $tar
+     * @return void
+     */
+    private function addDocumentsToArchive($archive): void {
+        if (!file_exists(storage_path('app/tmp/export/documents'))) {
+            Log::info('Documents folder does not exist, skipping adding documents to archive');
+            return;
+        }
+
         $files = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator(storage_path('app/exports/documents'))
+            new RecursiveDirectoryIterator(storage_path('app/tmp/export/documents'))
         );
 
         foreach ($files as $name => $file) {
             if (!$file->isDir()) {
                 $filePath = $file->getRealPath();
-                $relativePath = substr($filePath, strlen(storage_path('app/exports/')));
+                $relativePath = substr($filePath, strlen(storage_path('app/tmp/export/')));
 
-                $zip->addFile($filePath, $relativePath);
+                $archive->addFile($filePath, $relativePath);
             }
         }
     }

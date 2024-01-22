@@ -8,7 +8,7 @@ echo upload_max_filesize=$PHP_UPLOAD_MAX_FILESIZE > /usr/local/etc/php/conf.d/up
 echo post_max_size=$PHP_POST_MAX_SIZE >> /usr/local/etc/php/conf.d/uploads.ini
 
 # ensure storage folder is writable. Owner and group ids are wrong after update from alpine image
-chown -R www-data:www-data /var/www/html/storage
+chown -R $APP_USER:$APP_USER /var/www/html/storage
 
 # wait for db to start
 # setup variables
@@ -22,16 +22,18 @@ while ! mariadb-admin ping -h$DB_HOST -P$DB_PORT -u$DB_USERNAME -p$DB_PASSWORD -
 echo "db is up"
 
 # Run Laravel migrations
-su www-data -s /bin/sh -c "php /var/www/html/artisan migrate --force"
+su $APP_USER -s /bin/sh -c "php /var/www/html/artisan migrate --force"
 
 # Generate API documentation
-su www-data -s /bin/sh -c "php /var/www/html/artisan scribe:generate"
+su $APP_USER -s /bin/sh -c "php /var/www/html/artisan scribe:generate"
 
 # Start PHP-FPM in the background
 php-fpm &
+echo "php-fpm started"
 
 # start queue worker
-su www-data -s /bin/sh -c "php /var/www/html/artisan queue:work --tries=3 --timeout=600" &
+su $APP_USER -s /bin/sh -c "php /var/www/html/artisan queue:work --tries=3 --timeout=600" &
+echo "queue worker started"
 
 # Start Nginx in the foreground
 exec nginx -g 'daemon off;'
