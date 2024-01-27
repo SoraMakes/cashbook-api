@@ -123,6 +123,9 @@ class EntriesController extends Controller {
             return response()->json(['errors' => $validator->errors()], 400);
         }
 
+        // parse iso8601 date
+        $request['date'] = date('Y-m-d', strtotime($request->input('date')));
+
         try {
             $originalEntry = Entry::findOrFail($id);
         } catch (Exception $e) {
