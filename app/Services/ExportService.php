@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Entry;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use League\Csv\CharsetConverter;
 use League\Csv\Writer;
 use Phar;
 use PharData;
@@ -32,8 +33,20 @@ class ExportService {
         // Create a CSV Writer instance
         $csvPath = storage_path('app/tmp/export') . '/temp.csv';
         $csv = Writer::createFromPath($csvPath, 'w+');
-        // Set UTF-8 encoding with BOM
-        $csv->setOutputBOM(Writer::BOM_UTF8);
+        // Custom formatter for boolean values
+        $csv->addFormatter(function (array $row) {
+            return array_map(function ($value) {
+                if (is_bool($value)) {
+                    return $value ? 'Yes' : 'No';
+                }
+                return $value;
+            }, $row);
+        });
+        // Export in ANSI format to avoid Excel issues with german special characters
+        $encoder = (new CharsetConverter())
+            ->inputEncoding('utf-8')
+            ->outputEncoding('iso-8859-15');
+        $csv->addFormatter($encoder);
         // Set delimiter to comma or semicolon based on your needs
         $csv->setDelimiter(';');
 
@@ -92,7 +105,7 @@ class ExportService {
             $entry->date,
             $entry->recipient_sender,
             $entry->description,
-            $entry->amount == null ? ($entry->is_income ? $entry->amount : -$entry->amount) : '',
+            $entry->amount == null ? '' : ($entry->is_income ? $entry->amount : -$entry->amount),
             $entry->category ? $entry->category->name : '',
             $entry->is_income,
             $entry->payment_method,
