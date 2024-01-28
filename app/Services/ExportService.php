@@ -52,6 +52,7 @@ class ExportService {
 
         // Add CSV headers
         $csv->insertOne([
+            'Entry ID',
             'Date',
             'Recipient/Sender',
             'Description',
@@ -102,6 +103,7 @@ class ExportService {
 
     private function formatEntryForCsv($entry): array {
         return [
+            $entry->id,
             $entry->date,
             $entry->recipient_sender,
             $entry->description,
