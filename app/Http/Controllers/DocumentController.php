@@ -104,6 +104,7 @@ class DocumentController extends Controller {
         $filename = $file->getClientOriginalName();
         $filename_hash = md5(time() . $file->getClientOriginalName()) . '.' . $file->getClientOriginalExtension();
         $originalPath = $file->storeAs('originals', $filename_hash);
+        Log::debug('Original file info: ', ['filename' => $filename, 'originalPath' => $originalPath, 'sourceFileSize' => $file->getSize()]);
 
 
         if (self::isPDF($file)) {
@@ -149,18 +150,18 @@ class DocumentController extends Controller {
             $document = $page;
             // Create thumbnail for images; if original file was pdf: it is image now
             if ($document->width() > $document->height()) {
-                $thumbnail->scaleDown(null, 100);
+                $thumbnail->scaleDown(null, 256);
             } else {
-                $thumbnail->scaleDown(100);
+                $thumbnail->scaleDown(256);
             }
             // crop thumbnail to 100x100
-            $thumbnail->crop(100, 100, $thumbnail->width() / 2 - 50, $thumbnail->height() / 2 - 50);
+            $thumbnail->crop(256, 256, $thumbnail->width() / 2 - 256 / 2, $thumbnail->height() / 2 - 50);
 
             // scale down document max width/height of 1920px
             $document->scaleDown(2560, 2560);
 
             $thumbnailPath = 'thumbnails/' . $convertImageFilenameWithPagenumber;
-            $thumbnail->toAvif(50)->save(storage_path() . '/app/' . $thumbnailPath);
+            $thumbnail->toAvif(20)->save(storage_path() . '/app/' . $thumbnailPath);
 
             $documentPath = 'documents/' . $convertImageFilenameWithPagenumber;
             $document->toAvif(42)->save(storage_path() . '/app/' . $documentPath);
