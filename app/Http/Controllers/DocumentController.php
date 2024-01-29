@@ -143,7 +143,7 @@ class DocumentController extends Controller {
         Log::debug('Start thumbnail and document conversion');
         for ($i = 0; $i < count($inputImage); $i++) {
             $page = $inputImage[$i];
-            $convertImageFilename = $i . '_' . $convertImageFilename;
+            $convertImageFilenameWithPagenumber = $i . '_' . $convertImageFilename;
 
             $thumbnail = clone $page;
             $document = $page;
@@ -159,10 +159,10 @@ class DocumentController extends Controller {
             // scale down document max width/height of 1920px
             $document->scaleDown(2560, 2560);
 
-            $thumbnailPath = 'thumbnails/' . $convertImageFilename;
+            $thumbnailPath = 'thumbnails/' . $convertImageFilenameWithPagenumber;
             $thumbnail->toAvif(50)->save(storage_path() . '/app/' . $thumbnailPath);
 
-            $documentPath = 'documents/' . $convertImageFilename;
+            $documentPath = 'documents/' . $convertImageFilenameWithPagenumber;
             $document->toAvif(42)->save(storage_path() . '/app/' . $documentPath);
 
             Log::debug('Finished thumbnail and document conversion, saving to database');
