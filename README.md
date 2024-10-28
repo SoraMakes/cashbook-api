@@ -43,6 +43,27 @@ xml
 create user: docker exec api php /var/www/html/artisan user:create <username> <password> <token>
 
 data export: php artisan export:data --exportDocuments --convertToJpeg --exportFormat=tar.gz
-docker exec api su www-data -s /bin/sh -c "php /var/www/html/artisan export:data --exportDocuments --convertToJpeg --exportFormat=tar.gz"
+docker compose exec -it api su www-data -s /bin/sh -c "php artisan export:data --exportDocuments --convertToJpeg --exportFormat=tar.gz"
 
+## csv import
+The script `excel_import.py` is a quick n dirty solution to import csv exports from Sparkasse via API.
+
+> [!IMPORTANT]
+> This script is not properly tested and should be used with caution.
+
+The excel file (not a csv, but an xlsx) has to have the following (named) columns (mappings can be changed in the scripts config object):
+- category
+- Betrag
+- Buchungstag
+- Verwendungszweck
+- Beguenstigter/Zahlungspflichtiger
+
+- is_income (yes/no)
+- no_invoice (yes/no)
+
+In the script the following configs have to be set:
+- 'api_endpoint': '<api url of backend>'
+- 'username': '<your username>',
+- 'password': '<your password>',
+- 'excel_file': '<path to excel file>',
 
