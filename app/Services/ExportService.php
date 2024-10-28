@@ -223,7 +223,7 @@ class ExportService {
 
                 if ($convertToJpeg && $this->isUncommonImageFormat($originalPath)) {
                     // PHP Tar only allows max 100 chars long filenames https://stackoverflow.com/a/24801016
-                    $shortenedOriginalFilename = substr(pathinfo($document->original_filename, PATHINFO_FILENAME), 0, 92);
+                    $shortenedOriginalFilename = substr(pathinfo($document->original_filename, PATHINFO_FILENAME), 0, 90);
                     // Change file extension of $destinationFile to .jpg
                     $jpegFilename = $shortenedOriginalFilename . '.jpg';
                     $destinationFile = $destinationPathAbsolute . '/' . $document->id . '_' . $jpegFilename;
@@ -234,7 +234,7 @@ class ExportService {
                     $img->toJpeg(80)->save($destinationFile);
                 } else {
                     // PHP Tar only allows max 100 chars long filenames https://stackoverflow.com/a/24801016
-                    $shortenedOriginalFilename = substr(pathinfo($document->original_filename, PATHINFO_FILENAME), 0, 92) . "." . pathinfo($document->original_filename, PATHINFO_EXTENSION);
+                    $shortenedOriginalFilename = substr(pathinfo($document->original_filename, PATHINFO_FILENAME), 0, 89) . "." . pathinfo($document->original_filename, PATHINFO_EXTENSION);
                     $destinationFile = $destinationPathAbsolute . '/' . $document->id . '_' . $shortenedOriginalFilename;
 
                     // Copy original file
