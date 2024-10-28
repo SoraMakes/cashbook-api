@@ -6,6 +6,7 @@ ln -sf /usr/share/zoneinfo/$TZ /etc/localtime
 # apply php ini settings
 echo upload_max_filesize=$PHP_UPLOAD_MAX_FILESIZE > /usr/local/etc/php/conf.d/uploads.ini
 echo post_max_size=$PHP_POST_MAX_SIZE >> /usr/local/etc/php/conf.d/uploads.ini
+echo 'memory_limit = 1024M' > /usr/local/etc/php/conf.d/docker-php-memlimit.ini;
 
 # ensure storage folder is writable. Owner and group ids are wrong after update from alpine image
 chown -R $APP_USER:$APP_USER /var/www/html/storage
