@@ -82,6 +82,11 @@ class ExportService {
             }
         }
 
+        // ensure folder storage_path('app/exports/') exists
+        if (!file_exists(storage_path('app/exports'))) {
+            mkdir(storage_path('app/exports'));
+        }
+
         // Determine the export file path based on the format
         $exportFilePath = storage_path('app/exports/') . $this->generateExportFilename($exportDocuments, $convertToJpeg, $exportFormat);
 
