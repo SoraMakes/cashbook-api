@@ -201,7 +201,7 @@ class ExportService {
 
     private function exportDocuments($entry, $convertToJpeg): void {
         $entryFolderName = $entry->id . '_' . $entry->category->name . '_' . $entry->recipient_sender . '_' . $entry->description;
-        $entryFolderName = preg_replace('/[^A-Za-z0-9äöü_()+,.\-]/', '_', $entryFolderName);
+        $entryFolderName = preg_replace('/[^A-Za-z0-9äöü_()+ß,.\-]/', '_', $entryFolderName);
         $entryFolderName = substr($entryFolderName, 0, 100);
 
         foreach ($entry->documents as $document) {
