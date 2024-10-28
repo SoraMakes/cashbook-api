@@ -204,7 +204,15 @@ class ExportService {
         $entryFolderName = preg_replace('/[^A-Za-z0-9äöü_()+ß,.\-]/', '_', $entryFolderName);
         $entryFolderName = substr($entryFolderName, 0, 100);
 
+        $uniqueDocuments = [];
+
         foreach ($entry->documents as $document) {
+            $uniqueKey = $document->entry_id . '_' . $document->original_path;
+            if (in_array($uniqueKey, $uniqueDocuments)) {
+                continue;
+            }
+            $uniqueDocuments[] = $uniqueKey;
+
             $originalPath = storage_path('app/') . $document->original_path;
             if (file_exists($originalPath)) {
                 $destinationPathAbsolute = storage_path('app/tmp/export/documents/' . $entryFolderName);
