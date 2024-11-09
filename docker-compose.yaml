@@ -14,8 +14,25 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_USER: cashbook
+      PMA_PASSWORD: secret
+    ports:
+      - "8099:80"
+    networks:
+      - app-network
+    depends_on:
+      - db
+
   api:
-    image: ghcr.io/glutamat42/cashbook-api:1.0.0
+    image: ghcr.io/glutamat42/cashbook-api:2.3
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       APP_KEY: cca02837aa6277b9aad3bc0accc2f3cf
@@ -35,7 +52,7 @@ services:
       - db
 
   webapp:
-    image: ghcr.io/glutamat42/cashbook-app:1.0.0
+    image: ghcr.io/glutamat42/cashbook-app:1.9.0
     restart: unless-stopped
     ports:
       - "8098:80"

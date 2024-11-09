@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import openpyxl
 import requests
 import datetime
@@ -9,7 +11,7 @@ config = {
     'api_endpoint': 'http://localhost:8097',  # Replace with your API endpoint
     'username': 'test',          # Replace with your username
     'password': 'test',          # Replace with your password
-    'excel_file': 'test.xlsx',  # Replace with your Excel file path
+    'excel_file': '20241029-18937-umsatz.xlsx',  # Replace with your Excel file path
     'column_mapping': {
         'category': 'category',  # Excel header: API field
         'Betrag': 'amount',

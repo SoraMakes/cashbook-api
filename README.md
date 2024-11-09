@@ -67,3 +67,7 @@ In the script the following configs have to be set:
 - 'password': '<your password>',
 - 'excel_file': '<path to excel file>',
 
+### Notes
+Things i noticed while using:
+- Date column has to be properly formatted. If year format is short (eg 10.10.24) it might fail. fix it in excel to be
+  in long year format (10.10.2024)
