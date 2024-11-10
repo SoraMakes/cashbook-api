@@ -231,7 +231,7 @@ class ExportService {
 
                     // Convert image to JPEG
                     $img = ImageManager::imagick()->read($originalPath);
-                    $img->toJpeg(80)->save($destinationFile);
+                    $img->toJpeg(90)->save($destinationFile);
                 } else {
                     // PHP Tar only allows max 100 chars long filenames https://stackoverflow.com/a/24801016
                     $shortenedOriginalFilename = substr(pathinfo($document->original_filename, PATHINFO_FILENAME), 0, 89) . "." . pathinfo($document->original_filename, PATHINFO_EXTENSION);
